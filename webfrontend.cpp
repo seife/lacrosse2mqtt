@@ -218,8 +218,10 @@ void add_current_table(String &s, bool rawdata)
 void add_header(String &s, String title)
 {
     s += "<!DOCTYPE HTML><html lang=\"en\"><head>\n"
-        "<title>" + title + "</title>\n"
+        "<meta charset=\"utf-8\">\n"
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+        "<meta name=\"description\" content=\"lacrosse sensors to mqtt converter\">\n"
+        "<title>" + title + "</title>\n"
         "<style>\n"
         "td, th {\n"
         " text-align: right;\n"
@@ -243,8 +245,8 @@ void handle_index(AsyncWebServerRequest *request) {
     add_header(index, "LaCrosse2mqtt");
     add_current_table(index, false);
     index +=
-        "<br><a href=\"/config.html\">Configuration page</a>\n"
-        "</body>\n";
+        "<p><a href=\"/config.html\">Configuration page</a></p>\n"
+        "</body></html>\n";
     request->send(200, "text/html", index);
 }
 
@@ -305,31 +307,32 @@ void handle_config(AsyncWebServerRequest *request) {
     add_header(resp, "LaCrosse2mqtt Configuration");
     add_current_table(resp, true);
     token = millis();
-    resp += "<br>\n"
+    resp += "<p>\n"
         "<form action=\"/config.html\">\n"
         "<table>\n"
             " <tr>\n"
                 "<td>ID (0-255):</td><td><input type=\"number\" name=\"id\" min=\"0\" max=\"255\"></td>"
-                "<td>Name:</td><td><input type=\"text\" name=\"name\" value=\"\"></td>"
-                "<td><input type=\"submit\" value=\"Submit\"></td>\n"
+                "<td>Name:</td><td><input name=\"name\" value=\"\"></td>"
+                "<td><button type=\"submit\">Submit</button></td>\n"
             "</tr>\n"
         "</table>\n"
         "</form>\n"
-        "<br>MQTT server configuration (Status: connection ";
+        "<p></p>\n"
+        "MQTT server configuration (Status: connection ";
     if (!mqtt_ok)
         resp += "NOT ";
     resp += "ok)\n"
         "<form action=\"/config.html\">\n"
         "<table>\n"
             "<tr>\n"
-                "<td>name / IP address:</td><td><input type=\"text\" name=\"mqtt_server\" value=\"" + config.mqtt_server + "\"></td>"
+                "<td>name / IP address:</td><td><input name=\"mqtt_server\" value=\"" + config.mqtt_server + "\"></td>"
                 "<td>Port:</td><td><input type=\"number\" name=\"mqtt_port\" value=\"" + String(config.mqtt_port) + "\"></td>"
-                "<td><input type=\"submit\" value=\"Submit\"></td>\n"
+                "<td><button type=\"submit\">Submit</button></td>\n"
             "</tr>\n"
         "</table>\n"
         "</form>\n";
     if (config_changed) {
-        resp += "Config changed, please save or reload old config.<br>\n"
+        resp += "<p></p>\nConfig changed, please save or reload old config.\n"
             "<table>\n<tr>\n<td>"
             "<form action=\"/config.html\">"
             "<input type=\"hidden\" name=\"save\" value=\"" + String(token) + "\"><button type=\"submit\">Save</button>"
@@ -339,14 +342,14 @@ void handle_config(AsyncWebServerRequest *request) {
             "</form></td>\n</tr>\n</table>\n";
     }
     if (!littlefs_ok) {
-        resp += "<br><br>\n"
+        resp += "<p></p>\n"
             "<form action=\"/config.html\">"
             "LITTLEFS seems damaged. Format it?"
             "<input type=\"hidden\" name=\"format\" value=\"" + String(token) + "\"><button type=\"submit\">Yes, format!</button>"
-            "</form>";
+            "</form>\n";
     }
-    resp += "<br>\n<a href=\"/update\">Update software</a>\n"
-            "<br>\n<a href=\"/\">Main page</a>\n"
+    resp += "<p><a href=\"/update\">Update software</a></p>\n"
+            "<p><a href=\"/\">Main page</a></p>\n"
             "</body>\n</html>\n";
     request->send(200, "text/html", resp);
 }
