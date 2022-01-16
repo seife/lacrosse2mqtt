@@ -217,20 +217,20 @@ void add_current_table(String &s, bool rawdata)
 
 void add_header(String &s, String title)
 {
-    s += "<!DOCTYPE HTML><html lang=\"en\"><head>"
-        "<title>" + title + "</title>"
-        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
-        "<style>"
-        "td, th {"
-          "text-align: right;"
-        "}"
-        "table td:nth-child(8) {"
-        " font-family: monospace;"
-        " font-size: 10pt;"
-        "}"
-        "</style>"
-        "</head><body>"
-        "<H1>" + title + "</H1>";
+    s += "<!DOCTYPE HTML><html lang=\"en\"><head>\n"
+        "<title>" + title + "</title>\n"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+        "<style>\n"
+        "td, th {\n"
+        " text-align: right;\n"
+        "}\n"
+        "table td:nth-child(8) {\n"
+        " font-family: monospace;\n"
+        " font-size: 10pt;\n"
+        "}\n"
+        "</style>\n"
+        "</head>\n<body>\n"
+        "<H1>" + title + "</H1>\n";
 }
 
 
@@ -243,8 +243,8 @@ void handle_index(AsyncWebServerRequest *request) {
     add_header(index, "LaCrosse2mqtt");
     add_current_table(index, false);
     index +=
-        "<br><a href=\"/config.html\">Configuration page</a>"
-        "</body>";
+        "<br><a href=\"/config.html\">Configuration page</a>\n"
+        "</body>\n";
     request->send(200, "text/html", index);
 }
 
@@ -306,48 +306,48 @@ void handle_config(AsyncWebServerRequest *request) {
     add_current_table(resp, true);
     token = millis();
     resp += "<br>\n"
-        "<form action=\"/config.html\">"
-        "<table>"
-            "<tr>"
+        "<form action=\"/config.html\">\n"
+        "<table>\n"
+            " <tr>\n"
                 "<td>ID (0-255):</td><td><input type=\"number\" name=\"id\" min=\"0\" max=\"255\"></td>"
                 "<td>Name:</td><td><input type=\"text\" name=\"name\" value=\"\"></td>"
-                "<td><input type=\"submit\" value=\"Submit\"></td>"
-            "</tr>"
-        "</table>"
-        "</form>"
+                "<td><input type=\"submit\" value=\"Submit\"></td>\n"
+            "</tr>\n"
+        "</table>\n"
+        "</form>\n"
         "<br>MQTT server configuration (Status: connection ";
     if (!mqtt_ok)
         resp += "NOT ";
-    resp += "ok)"
-        "<form action=\"/config.html\">"
-        "<table>"
-            "<tr>"
+    resp += "ok)\n"
+        "<form action=\"/config.html\">\n"
+        "<table>\n"
+            "<tr>\n"
                 "<td>name / IP address:</td><td><input type=\"text\" name=\"mqtt_server\" value=\"" + config.mqtt_server + "\"></td>"
                 "<td>Port:</td><td><input type=\"number\" name=\"mqtt_port\" value=\"" + String(config.mqtt_port) + "\"></td>"
-                "<td><input type=\"submit\" value=\"Submit\"></td>"
-            "</tr>"
-        "</table>"
-        "</form>";
+                "<td><input type=\"submit\" value=\"Submit\"></td>\n"
+            "</tr>\n"
+        "</table>\n"
+        "</form>\n";
     if (config_changed) {
         resp += "Config changed, please save or reload old config.<br>\n"
-            "<table><tr><td>"
+            "<table>\n<tr>\n<td>"
             "<form action=\"/config.html\">"
             "<input type=\"hidden\" name=\"save\" value=\"" + String(token) + "\"><button type=\"submit\">Save</button>"
-            "</form></td><td>"
+            "</form></td>\n<td>"
             "<form action=\"/config.html\">"
             "<input type=\"hidden\" name=\"cancel\" value=\"" + String(token) + "\"><button type=\"submit\">Reload</button>"
-            "</form></td></tr></table>\n";
+            "</form></td>\n</tr>\n</table>\n";
     }
     if (!littlefs_ok) {
-        resp += "<br><br>"
+        resp += "<br><br>\n"
             "<form action=\"/config.html\">"
             "LITTLEFS seems damaged. Format it?"
             "<input type=\"hidden\" name=\"format\" value=\"" + String(token) + "\"><button type=\"submit\">Yes, format!</button>"
             "</form>";
     }
-    resp += "<br><a href=\"/update\">Update software</a>"
-            "<br><a href=\"/\">Main page</a>"
-            "</body></html>\n";
+    resp += "<br>\n<a href=\"/update\">Update software</a>\n"
+            "<br>\n<a href=\"/\">Main page</a>\n"
+            "</body>\n</html>\n";
     request->send(200, "text/html", resp);
 }
 
