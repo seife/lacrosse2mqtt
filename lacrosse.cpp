@@ -31,14 +31,14 @@ void LaCrosse::DecodeFrame(byte *bytes, struct Frame *f)
     f->ID =  (bytes[0] & 0xF) << 2;
     f->ID |= (bytes[1] & 0xC0) >> 6;
 
-    f->init = (bytes[1] & 0x20);
+    f->init = (bytes[1] & 0x20) ? 1 : 0;
 
     byte bcd[3];
     bcd[0] = bytes[1] & 0xF;
     bcd[1] = (bytes[2] & 0xF0) >> 4;
     bcd[2] = (bytes[2] & 0xF);
     f->temp  = ((bcd[0] * 100 + bcd[1] * 10 + bcd[2]) - 400) / 10.0;
-    f->batlo = bytes[3] & 0x80;
+    f->batlo = (bytes[3] & 0x80) ? 1 : 0;
     f->humi  = bytes[3] & 0x7f;
     if (f->humi == 0x7d) /* indicates that temperature is second channel */
         f->ID |= 0x40;   /* => increase ID by 64 to indicate difference  */
