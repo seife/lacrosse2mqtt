@@ -176,10 +176,13 @@ bool save_idmap()
     return true;
 }
 
-void add_current_table(String &s)
+void add_current_table(String &s, bool rawdata)
 {
     unsigned long now = millis();
-    s += "<table><tr><th>ID</th><th>Temperature</th><th>RSSI</th><th>Name</th><th>Age (ms)</th><th>Battery</th><th>New?</th></tr>\n";
+    s += "<table><tr><th>ID</th><th>Temperature</th><th>RSSI</th><th>Name</th><th>Age (ms)</th><th>Battery</th><th>New?</th>";
+    if (rawdata)
+        s += "<th>Raw Frame Data</th>";
+    s += "</tr>\n";
     for (int i = 0; i < 255; i++) {
         if (fcache[i].timestamp == 0)
             continue;
@@ -197,7 +200,17 @@ void add_current_table(String &s)
              "</td><td>" + String(now - fcache[i].timestamp) +
              "</td><td>" + String(f.batlo ? "LOW!" : "OK") +
              "</td><td>" + String(f.init ? "YES!" : "no") +
-             "</td></tr>\n";
+             "</td>";
+        if (rawdata) {
+            s += "<td>0x";
+            for (int j = 0; j < FRAME_LENGTH; j++) {
+                char tmp[3];
+                snprintf(tmp, 3, "%02X", fcache[i].data[j]);
+                s += String(tmp);
+            }
+            s += "</td>";
+        }
+        s += "</tr>\n";
     }
     s += "</table>\n";
 }
@@ -210,6 +223,10 @@ void add_header(String &s, String title)
         "<style>"
         "td, th {"
           "text-align: right;"
+        "}"
+        "table td:nth-child(8) {"
+        " font-family: monospace;"
+        " font-size: 10pt;"
         "}"
         "</style>"
         "</head><body>"
@@ -224,7 +241,7 @@ void handle_index(AsyncWebServerRequest *request) {
     String IP = WiFi.localIP().toString();
     String index;
     add_header(index, "LaCrosse2mqtt");
-    add_current_table(index);
+    add_current_table(index, false);
     index +=
         "<br><a href=\"/config.html\">Configuration page</a>"
         "</body>";
@@ -286,7 +303,7 @@ void handle_config(AsyncWebServerRequest *request) {
     }
     String resp;
     add_header(resp, "LaCrosse2mqtt Configuration");
-    add_current_table(resp);
+    add_current_table(resp, true);
     token = millis();
     resp += "<br>\n"
         "<table>"
