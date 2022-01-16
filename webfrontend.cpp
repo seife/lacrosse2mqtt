@@ -217,7 +217,7 @@ void add_current_table(String &s, bool rawdata)
 
 void add_header(String &s, String title)
 {
-    s += "<!DOCTYPE HTML><html><head>"
+    s += "<!DOCTYPE HTML><html lang=\"en\"><head>"
         "<title>" + title + "</title>"
         "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
         "<style>"
@@ -306,28 +306,28 @@ void handle_config(AsyncWebServerRequest *request) {
     add_current_table(resp, true);
     token = millis();
     resp += "<br>\n"
-        "<table>"
         "<form action=\"/config.html\">"
+        "<table>"
             "<tr>"
                 "<td>ID (0-255):</td><td><input type=\"number\" name=\"id\" min=\"0\" max=\"255\"></td>"
                 "<td>Name:</td><td><input type=\"text\" name=\"name\" value=\"\"></td>"
                 "<td><input type=\"submit\" value=\"Submit\"></td>"
             "</tr>"
-        "</form>"
         "</table>"
+        "</form>"
         "<br>MQTT server configuration (Status: connection ";
     if (!mqtt_ok)
         resp += "NOT ";
     resp += "ok)"
-        "<table>"
         "<form action=\"/config.html\">"
+        "<table>"
             "<tr>"
                 "<td>name / IP address:</td><td><input type=\"text\" name=\"mqtt_server\" value=\"" + config.mqtt_server + "\"></td>"
                 "<td>Port:</td><td><input type=\"number\" name=\"mqtt_port\" value=\"" + String(config.mqtt_port) + "\"></td>"
                 "<td><input type=\"submit\" value=\"Submit\"></td>"
             "</tr>"
-        "</form>"
-        "</table>";
+        "</table>"
+        "</form>";
     if (config_changed) {
         resp += "Config changed, please save or reload old config.<br>\n"
             "<table><tr><td>"
