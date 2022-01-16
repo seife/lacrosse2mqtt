@@ -5,6 +5,11 @@
 #include <LITTLEFS.h>
 #include <ArduinoJson.h>
 
+/* git version passed by compile.sh */
+#ifndef LACROSSE2MQTT_VERSION
+#define LACROSSE2MQTT_VERSION "unknown"
+#endif
+
 static AsyncWebServer server(80);
 int name2id(const char *fname, const int start = 0)
 {
@@ -20,6 +25,24 @@ int name2id(const char *fname, const int start = 0)
         return -1;
     }
     return id;
+}
+
+uint32_t uptime_sec()
+{
+    return (uint32_t) esp_timer_get_time()/(int64_t)1000000;
+}
+
+String time_string(void)
+{
+    uint32_t now = uptime_sec();
+    char timestr[10];
+    String ret = "";
+    if (now >= 24*60*60)
+        ret += String(now / (24*60*60)) + "d ";
+    now %= 24*60*60;
+    snprintf(timestr, 10, "%02d:%02d:%02d", now / (60*60), (now % (60*60)) / 60, now % 60);
+    ret += String(timestr);
+    return ret;
 }
 
 String read_file(File &file)
@@ -235,18 +258,25 @@ void add_header(String &s, String title)
         "<H1>" + title + "</H1>\n";
 }
 
+void add_sysinfo_footer(String &s)
+{
+    s += "<p>"
+        "System information: Uptime " + time_string() +
+        ", Software version: " + LACROSSE2MQTT_VERSION +
+        ", Built: " + __DATE__ + " " + __TIME__ +
+        "</p>\n";
+}
 
 //void handle_index() {
 void handle_index(AsyncWebServerRequest *request) {
     // TODO: use server.hostHeader()?
-    unsigned long uptime = millis();
     String IP = WiFi.localIP().toString();
     String index;
     add_header(index, "LaCrosse2mqtt");
     add_current_table(index, false);
-    index +=
-        "<p><a href=\"/config.html\">Configuration page</a></p>\n"
-        "</body></html>\n";
+    index += "<p><a href=\"/config.html\">Configuration page</a></p>\n";
+    add_sysinfo_footer(index);
+    index += "</body></html>\n";
     request->send(200, "text/html", index);
 }
 
@@ -256,6 +286,7 @@ void handle_config(AsyncWebServerRequest *request) {
     if (request->hasArg("id") && request->hasArg("name")) {
         String _id = request->arg("id");
         String name = request->arg("name");
+        name.trim(); /* no leading / trailing whitespace to avoid strange surprises */
         if (_id[0] >= '0' && _id[0] <= '9') {
             int id = _id.toInt();
             if (id >= 0 && id < SENSOR_NUM) {
@@ -349,8 +380,9 @@ void handle_config(AsyncWebServerRequest *request) {
             "</form>\n";
     }
     resp += "<p><a href=\"/update\">Update software</a></p>\n"
-            "<p><a href=\"/\">Main page</a></p>\n"
-            "</body>\n</html>\n";
+            "<p><a href=\"/\">Main page</a></p>\n";
+    add_sysinfo_footer(resp);
+    resp += "</body></html>\n";
     request->send(200, "text/html", resp);
 }
 
