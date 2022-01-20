@@ -89,7 +89,7 @@ byte SX127x::GetByteFromFifo()
     return ReadReg(0x00);
 }
 
-bool SX127x::ClearFifo()
+void SX127x::ClearFifo()
 {
     WriteReg(REG_IRQFLAGS2, 16);
 }

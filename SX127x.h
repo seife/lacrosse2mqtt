@@ -36,7 +36,7 @@ private:
   byte ReadReg(byte addr);
   void WriteReg(byte addr, byte value);
   byte GetByteFromFifo();
-  bool ClearFifo();
+  void ClearFifo();
 
 };
 
