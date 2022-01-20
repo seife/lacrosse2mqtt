@@ -13,7 +13,7 @@ enum {
 
 extern const char *_wifi_state_str[];
 extern int wifi_state;
-void WiFiEvent(WiFiEvent_t event, system_event_info_t info);
+void WiFiEvent(WiFiEvent_t event);
 void start_WPS();
 void WiFiStatusCheck();
 

@@ -15,7 +15,7 @@ const char *_wifi_state_str[] = {
     "fail"
 };
 
-void WiFiEvent(WiFiEvent_t event, system_event_info_t info)
+void WiFiEvent(WiFiEvent_t event)
 {
     switch (event) {
         case SYSTEM_EVENT_STA_START:
@@ -68,7 +68,6 @@ void start_WPS()
     Serial.println("Starting WPS");
     wifi_state = STATE_WPS;
     WiFi.mode(WIFI_MODE_STA);
-    wps_config.crypto_funcs = &g_wifi_default_wps_crypto_funcs;
     wps_config.wps_type = WPS_TYPE_PBC;
     strcpy(wps_config.factory_info.manufacturer, ESP_MANUFACTURER);
     strcpy(wps_config.factory_info.model_number, ESP_MODEL_NUMBER);

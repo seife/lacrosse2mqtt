@@ -2,7 +2,7 @@
 #include "lacrosse.h"
 #include "globals.h"
 #include <AsyncElegantOTA.h>
-#include <LITTLEFS.h>
+#include <LittleFS.h>
 #include <ArduinoJson.h>
 
 /* git version passed by compile.sh */
@@ -57,7 +57,7 @@ bool load_idmap()
 {
     if (!littlefs_ok)
         return false;
-    File idmapdir = LITTLEFS.open("/idmap");
+    File idmapdir = LittleFS.open("/idmap");
     if (!idmapdir) {
         Serial.println("/idmap not found");
         return false;
@@ -73,7 +73,7 @@ bool load_idmap()
     File file = idmapdir.openNextFile();
     while (file) {
         const char *fname = file.name();
-        int id = name2id(fname, strlen("/idmap/"));
+        int id = name2id(fname);
         if (id > -1) {
             Serial.printf("reading idmap file %s id:%2d ", fname, id);
             id2name[id] = read_file(file);
@@ -91,7 +91,7 @@ bool load_config()
 {
     if (!littlefs_ok)
         return false;
-    File cfg = LITTLEFS.open("/config.json");
+    File cfg = LittleFS.open("/config.json");
     StaticJsonDocument<512> doc;
     DeserializationError error = deserializeJson(doc, cfg);
     if (error) {
@@ -117,8 +117,8 @@ bool load_config()
 bool save_config()
 {
     bool ret = true;
-    LITTLEFS.remove("/config.json");
-    File cfg = LITTLEFS.open("/config.json", FILE_WRITE);
+    LittleFS.remove("/config.json");
+    File cfg = LittleFS.open("/config.json", FILE_WRITE);
     if (! cfg) {
         Serial.println("Failed to open /config.json for writing");
         return false;
@@ -132,7 +132,7 @@ bool save_config()
     }
     cfg.close();
     Serial.println("---written config.json:");
-    cfg = LITTLEFS.open("/config.json");
+    cfg = LittleFS.open("/config.json");
     Serial.println(read_file(cfg));
     cfg.close();
     Serial.println("---end config.json:");
@@ -143,11 +143,11 @@ bool save_idmap()
 {
     if (!littlefs_ok)
         return false;
-    File idmapdir = LITTLEFS.open("/idmap");
+    File idmapdir = LittleFS.open("/idmap");
     if (!idmapdir) {
         Serial.println("SAVE: /idmapdir not found");
-        if (LITTLEFS.mkdir("/idmap"))
-            idmapdir = LITTLEFS.open("/idmap");
+        if (LittleFS.mkdir("/idmap"))
+            idmapdir = LittleFS.open("/idmap");
         else {
             Serial.println("SAVE: mkdir /idmap failed :-(");
             return false;
@@ -160,13 +160,13 @@ bool save_idmap()
     }
     File file = idmapdir.openNextFile();
     while (file) {
-        int id = name2id(file.name(), strlen("/idmap/"));
+        int id = name2id(file.name());
         String fullname = String(file.name());
         file.close();
         if (id > -1 && id2name[id].length() == 0) {
             Serial.print("removing ");
             Serial.println(fullname);
-            if (!LITTLEFS.remove(fullname))
+            if (!LittleFS.remove(fullname))
                 Serial.println("failed?");
         }
         file = idmapdir.openNextFile();
@@ -175,9 +175,9 @@ bool save_idmap()
         if (id2name[i].length() == 0)
             continue;
         String fullname = String("/idmap/") + String((i < 10)?"0":"") + String(i, HEX);
-        if (LITTLEFS.exists(fullname)) {
+        if (LittleFS.exists(fullname)) {
             //Serial.println("Exists: " + fullname);
-            File comp = LITTLEFS.open(fullname);
+            File comp = LittleFS.open(fullname);
             if (comp) {
                 //Serial.println("open: " + fullname);
                 String tmp = read_file(comp);
@@ -189,7 +189,7 @@ bool save_idmap()
             }
         }
         Serial.println("Writing file " +fullname+" content: " + id2name[i]);
-        File file = LITTLEFS.open(fullname, FILE_WRITE);
+        File file = LittleFS.open(fullname, FILE_WRITE);
         if (! file) {
             Serial.println("file open failed :-(");
             continue;
@@ -328,7 +328,7 @@ void handle_config(AsyncWebServerRequest *request) {
     }
     if (request->hasArg("format")) {
         if (request->arg("format") == String(token)) {
-            LITTLEFS.begin(true);
+            LittleFS.begin(true);
             ESP.restart();
             while (true)
                 delay(100);
@@ -375,7 +375,7 @@ void handle_config(AsyncWebServerRequest *request) {
     if (!littlefs_ok) {
         resp += "<p></p>\n"
             "<form action=\"/config.html\">"
-            "LITTLEFS seems damaged. Format it?"
+            "LittleFS seems damaged. Format it?"
             "<input type=\"hidden\" name=\"format\" value=\"" + String(token) + "\"><button type=\"submit\">Yes, format!</button>"
             "</form>\n";
     }

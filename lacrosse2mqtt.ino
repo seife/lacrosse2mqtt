@@ -16,7 +16,7 @@
  * with this program; if not, got to https://www.gnu.org/licenses/
  */
 
-#include <LITTLEFS.h>
+#include <LittleFS.h>
 #include <SPI.h>
 #include <PubSubClient.h>
 #include <SSD1306Wire.h>
@@ -247,9 +247,9 @@ void setup(void)
     Serial.begin(115200);
     WiFi.onEvent(WiFiEvent);
     WiFi.begin();
-    littlefs_ok = LITTLEFS.begin(FORMAT_LITTLEFS_IF_FAILED);
+    littlefs_ok = LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED);
     if (!littlefs_ok)
-        Serial.println("LITTLEFS Mount Failed");
+        Serial.println("LittleFS Mount Failed");
     setup_web(); /* also loads config from LittleFS */
 
     pinMode(KEY_BUILTIN, INPUT);
@@ -293,7 +293,7 @@ void setup(void)
 
 #ifdef DEBUG_DAVFS
     tcp.begin();
-    dav.begin(&tcp, &LITTLEFS);
+    dav.begin(&tcp, &LittleFS);
     dav.setTransferStatusCallback([](const char* name, int percent, bool receive)
     {
         Serial.printf("%s: '%s': %d%%\n", receive ? "recv" : "send", name, percent);
