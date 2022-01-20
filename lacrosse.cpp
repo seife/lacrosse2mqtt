@@ -95,7 +95,7 @@ byte LaCrosse::CalculateCRC(byte *data, byte len)
     return res;
 }
 
-void LaCrosse::DisplayRaw(unsigned long &last, char *dev, uint8_t *data, uint8_t len, int8_t rssi, int rate)
+void LaCrosse::DisplayRaw(unsigned long &last, const char *dev, uint8_t *data, uint8_t len, int8_t rssi, int rate)
 {
     unsigned long now = millis();
     if (last == 0)

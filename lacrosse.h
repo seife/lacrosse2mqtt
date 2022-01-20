@@ -22,7 +22,7 @@ public:
     static bool TryHandleData(byte *data, struct Frame *frame);
     static uint8_t UpdateCRC(byte res, uint8_t val);
     static uint8_t CalculateCRC(byte *data, uint8_t len);
-    static void DisplayRaw(unsigned long &last, char *dev, uint8_t *data, uint8_t len, int8_t rssi, int rate);
+    static void DisplayRaw(unsigned long &last, const char *dev, uint8_t *data, uint8_t len, int8_t rssi, int rate);
 };
 
 #endif
