@@ -259,6 +259,7 @@ void setup(void)
     digitalWrite(OLED_RST, HIGH);
 
     display.init();
+    display.setContrast(16); /* it is for debug only, so dimming is ok */
     display.flipScreenVertically();
     display.setFont(ArialMT_Plain_10);
     display.setTextAlignment(TEXT_ALIGN_LEFT);
