@@ -27,11 +27,6 @@ int name2id(const char *fname, const int start = 0)
     return id;
 }
 
-uint32_t uptime_sec()
-{
-    return (esp_timer_get_time()/(int64_t)1000000);
-}
-
 String time_string(void)
 {
     uint32_t now = uptime_sec();

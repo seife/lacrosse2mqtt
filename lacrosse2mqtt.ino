@@ -149,7 +149,7 @@ void update_display(LaCrosse::Frame *frame)
 {
     char tmp[32];
     last_display = millis();
-    unsigned long now = last_display/1000;
+    uint32_t now = uptime_sec();
     snprintf(tmp, 31, "%dd %d:%02d:%02d", now / 86400, (now % 86400) / 3600, (now % 3600) / 60, now % 60);
     String status = "WiFi:" + wifi_disp + " up: " + String(tmp);
     display.clear();

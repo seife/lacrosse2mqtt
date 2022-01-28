@@ -49,4 +49,8 @@ extern Cache fcache[];
 extern String id2name[SENSOR_NUM];
 extern bool littlefs_ok;
 extern bool mqtt_ok;
+
+/* ugly... */
+static inline uint32_t uptime_sec() { return (esp_timer_get_time()/(int64_t)1000000); }
+
 #endif
