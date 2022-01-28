@@ -202,7 +202,8 @@ bool save_idmap()
 void add_current_table(String &s, bool rawdata)
 {
     unsigned long now = millis();
-    s += "<table><tr><th>ID</th><th>Temperature</th><th>RSSI</th><th>Name</th><th>Age (ms)</th><th>Battery</th><th>New?</th>";
+    String h;
+    s += "<table><tr><th>ID</th><th>Temperature</th><th>Humidity</th><th>RSSI</th><th>Name</th><th>Age (ms)</th><th>Battery</th><th>New?</th>";
     if (rawdata)
         s += "<th>Raw Frame Data</th>";
     s += "</tr>\n";
@@ -216,8 +217,13 @@ void add_current_table(String &s, bool rawdata)
             f.rate = 17241;
         if (! LaCrosse::TryHandleData(fcache[i].data, &f))
             continue;
+        if (f.humi <= 100)
+            h = String(f.humi) + "%";
+        else
+            h = "-";
         s +=  "<tr><td>" + String(f.ID) +
              "</td><td>" + String(f.temp, 1) +
+             "</td><td>" + h +
              "</td><td>" + String(fcache[i].rssi) +
              "</td><td>" + id2name[f.ID] +
              "</td><td>" + String(now - fcache[i].timestamp) +
@@ -249,7 +255,7 @@ void add_header(String &s, String title)
         "td, th {\n"
         " text-align: right;\n"
         "}\n"
-        "table td:nth-child(8) {\n"
+        "table td:nth-child(9) {\n"
         " font-family: monospace;\n"
         " font-size: 10pt;\n"
         "}\n"
