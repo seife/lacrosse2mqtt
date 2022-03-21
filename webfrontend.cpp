@@ -203,9 +203,24 @@ void add_current_table(String &s, bool rawdata)
         s += "<th>Raw Frame Data</th>";
     s += "</tr>\n";
     for (int i = 0; i < 255; i++) {
-        if (fcache[i].timestamp == 0)
-            continue;
         LaCrosse::Frame f;
+        bool stale = false;
+        String name = id2name[i];
+        if (fcache[i].timestamp == 0) {
+            if (name.length() > 0)
+                stale = true;
+            else
+                continue;
+        }
+        if (stale) {
+            s +=  "<tr><td>" + String(i) +
+                 "</td><td>-</td><td>-</td><td>-</td><td>" + name +
+                 "</td><td>-</td><td>-</td><td>-</td>";
+            if (rawdata)
+                s += "<td>-</td>";
+            s += "</tr>\n";
+            continue;
+        }
         if (i & 0x80)
             f.rate = 9579;
         else
@@ -216,11 +231,11 @@ void add_current_table(String &s, bool rawdata)
             h = String(f.humi) + "%";
         else
             h = "-";
-        s +=  "<tr><td>" + String(f.ID) +
+        s +=  "<tr><td>" + String(i) +
              "</td><td>" + String(f.temp, 1) +
              "</td><td>" + h +
              "</td><td>" + String(fcache[i].rssi) +
-             "</td><td>" + id2name[f.ID] +
+             "</td><td>" + name +
              "</td><td>" + String(now - fcache[i].timestamp) +
              "</td><td>" + String(f.batlo ? "LOW!" : "OK") +
              "</td><td>" + String(f.init ? "YES!" : "no") +
