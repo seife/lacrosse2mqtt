@@ -169,7 +169,7 @@ bool save_idmap()
     for (int i = 0; i < SENSOR_NUM; i++) {
         if (id2name[i].length() == 0)
             continue;
-        String fullname = String("/idmap/") + String((i < 10)?"0":"") + String(i, HEX);
+        String fullname = String("/idmap/") + String((i < 0x10)?"0":"") + String(i, HEX);
         if (LittleFS.exists(fullname)) {
             //Serial.println("Exists: " + fullname);
             File comp = LittleFS.open(fullname);
