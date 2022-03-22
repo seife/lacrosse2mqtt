@@ -202,7 +202,7 @@ void add_current_table(String &s, bool rawdata)
     if (rawdata)
         s += "<th>Raw Frame Data</th>";
     s += "</tr>\n";
-    for (int i = 0; i < 255; i++) {
+    for (int i = 0; i < SENSOR_NUM; i++) {
         LaCrosse::Frame f;
         bool stale = false;
         String name = id2name[i];
