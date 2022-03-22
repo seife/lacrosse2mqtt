@@ -156,7 +156,7 @@ bool save_idmap()
     File file = idmapdir.openNextFile();
     while (file) {
         int id = name2id(file.name());
-        String fullname = String(file.name());
+        String fullname = "/idmap/" + String(file.name());
         file.close();
         if (id > -1 && id2name[id].length() == 0) {
             Serial.print("removing ");
