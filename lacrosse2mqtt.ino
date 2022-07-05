@@ -219,8 +219,8 @@ void receive()
         mqtt_client.publish((pub + "state").c_str(), state.c_str());
         if (id2name[ID].length() > 0) {
             pub = pretty_base + id2name[ID] + "/";
-            if (abs(oldframe.temp - frame.temp) > 4.0)
-                Serial.println(String("skipping invalid temp diff bigger than 4K: ") + String(oldframe.temp - frame.temp,1));
+            if (abs(oldframe.temp - frame.temp) > 2.0)
+                Serial.println(String("skipping invalid temp diff bigger than 2K: ") + String(oldframe.temp - frame.temp,1));
             else
                 mqtt_client.publish((pub + "temp").c_str(), String(frame.temp, 1).c_str());
             if (frame.humi <= 100) {
