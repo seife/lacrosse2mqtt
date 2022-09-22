@@ -150,7 +150,15 @@ void update_display(LaCrosse::Frame *frame)
     uint32_t now = uptime_sec();
     snprintf(tmp, 31, "%dd %d:%02d:%02d", now / 86400, (now % 86400) / 3600, (now % 3600) / 60, now % 60);
     String status = "WiFi:" + wifi_disp + " up: " + String(tmp);
-    display.clear();
+    bool s_invert = (now / 60) & 0x01; /* 60 seconds inverted, the next 60s not */
+    display.setColor(WHITE);
+    if (s_invert) {
+        display.fillRect(0, 0, 128,64); /* clear() does fix set black background */
+        display.setColor(BLACK);
+    } else {
+        display.clear();
+    }
+
     display.drawString(0, 0, status);
     if (frame) {
         if (frame->valid) {
