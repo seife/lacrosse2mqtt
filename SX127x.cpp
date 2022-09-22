@@ -79,7 +79,7 @@ void SX127x::EnableReceiver(bool enable, int len)
     }
     /* enable... */
     WriteReg(REG_OPMODE, (ReadReg(REG_OPMODE) & RF_OPMODE_MASK) | RF_OPMODE_RECEIVER);
-    WriteReg(REG_FIFOTHRESH, RF_FIFOTHRESH_TXSTARTCONDITION_FIFONOTEMPTY | len - 1);
+    WriteReg(REG_FIFOTHRESH, RF_FIFOTHRESH_TXSTARTCONDITION_FIFONOTEMPTY | (len - 1));
     WriteReg(REG_PAYLOADLENGTH, len);
     ClearFifo();
 }
@@ -152,7 +152,7 @@ bool SX127x::init()
     pinMode(m_ss, OUTPUT);
     delay(10);
     digitalWrite(m_ss, HIGH);
-    if (m_reset != -1) {
+    if (m_reset != (byte)-1) {
         pinMode(m_reset, OUTPUT);
         digitalWrite(m_reset, LOW);
         delay(10);
