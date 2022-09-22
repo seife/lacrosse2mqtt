@@ -33,8 +33,5 @@ The following libraries are needed for building (installed via arduino lib manag
    * PubSubClient
    * ESP8266 and ESP32 OLED driver for SSD1306 displays
    * ArduinoJson
-   * ESP Async WebServer (https://github.com/me-no-dev/ESPAsyncWebServer)
-   * AsyncTCP (https://github.com/me-no-dev/AsyncTCP)
-   * AsyncElegantOTA (https://github.com/ayushsharma82/AsyncElegantOTA)
    * ESPWebDav (for debugging only)
 

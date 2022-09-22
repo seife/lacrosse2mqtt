@@ -1,7 +1,7 @@
 #include "webfrontend.h"
 #include "lacrosse.h"
 #include "globals.h"
-#include <AsyncElegantOTA.h>
+#include <HTTPUpdateServer.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 
@@ -10,7 +10,9 @@
 #define LACROSSE2MQTT_VERSION "unknown"
 #endif
 
-static AsyncWebServer server(80);
+static WebServer server(80);
+static HTTPUpdateServer httpUpdater;
+
 int name2id(const char *fname, const int start = 0)
 {
     if (strlen(fname) - start != 2) {
@@ -284,7 +286,7 @@ void add_sysinfo_footer(String &s)
 }
 
 //void handle_index() {
-void handle_index(AsyncWebServerRequest *request) {
+void handle_index() {
     // TODO: use server.hostHeader()?
     String IP = WiFi.localIP().toString();
     String index;
@@ -293,15 +295,15 @@ void handle_index(AsyncWebServerRequest *request) {
     index += "<p><a href=\"/config.html\">Configuration page</a></p>\n";
     add_sysinfo_footer(index);
     index += "</body></html>\n";
-    request->send(200, "text/html", index);
+    server.send(200, "text/html", index);
 }
 
 static bool config_changed = false;
-void handle_config(AsyncWebServerRequest *request) {
+void handle_config() {
     static unsigned long token = millis();
-    if (request->hasArg("id") && request->hasArg("name")) {
-        String _id = request->arg("id");
-        String name = request->arg("name");
+    if (server.hasArg("id") && server.hasArg("name")) {
+        String _id = server.arg("id");
+        String name = server.arg("name");
         name.trim(); /* no leading / trailing whitespace to avoid strange surprises */
         if (_id[0] >= '0' && _id[0] <= '9') {
             int id = _id.toInt();
@@ -311,27 +313,27 @@ void handle_config(AsyncWebServerRequest *request) {
             }
         }
     }
-    if (request->hasArg("mqtt_server")) {
-        config.mqtt_server = request->arg("mqtt_server");
+    if (server.hasArg("mqtt_server")) {
+        config.mqtt_server = server.arg("mqtt_server");
         config.changed = true;
         config_changed = true;
     }
-    if (request->hasArg("mqtt_port")) {
-        String _port = request->arg("mqtt_port");
+    if (server.hasArg("mqtt_port")) {
+        String _port = server.arg("mqtt_port");
         config.mqtt_port = _port.toInt();
         config.changed = true;
         config_changed = true;
     }
-    if (request->hasArg("save")) {
-        if (request->arg("save") == String(token)) {
+    if (server.hasArg("save")) {
+        if (server.arg("save") == String(token)) {
             Serial.println("SAVE!");
             save_idmap();
             save_config();
             config_changed = false;
         }
     }
-    if (request->hasArg("cancel")) {
-        if (request->arg("cancel") == String(token)) {
+    if (server.hasArg("cancel")) {
+        if (server.arg("cancel") == String(token)) {
             load_idmap();
             load_config();
             config_changed = false;
@@ -342,8 +344,8 @@ void handle_config(AsyncWebServerRequest *request) {
 #endif
         }
     }
-    if (request->hasArg("format")) {
-        if (request->arg("format") == String(token)) {
+    if (server.hasArg("format")) {
+        if (server.arg("format") == String(token)) {
             LittleFS.begin(true);
             ESP.restart();
             while (true)
@@ -399,7 +401,7 @@ void handle_config(AsyncWebServerRequest *request) {
             "<p><a href=\"/\">Main page</a></p>\n";
     add_sysinfo_footer(resp);
     resp += "</body></html>\n";
-    request->send(200, "text/html", resp);
+    server.send(200, "text/html", resp);
 }
 
 void setup_web()
@@ -411,10 +413,15 @@ void setup_web()
     server.on("/", handle_index);
     server.on("/index.html", handle_index);
     server.on("/config.html", handle_config);
-    server.onNotFound([](AsyncWebServerRequest *request){
-        request->send(404, "text/plain", "The content you are looking for was not found.\n");
-        Serial.println("404: " + request->url());
+    server.onNotFound([](){
+        server.send(404, "text/plain", "The content you are looking for was not found.\n");
+        Serial.println("404: " + server.uri());
     });
-    AsyncElegantOTA.begin(&server);
+    httpUpdater.setup(&server);
     server.begin();
+}
+
+void handle_client()
+{
+    server.handleClient();
 }

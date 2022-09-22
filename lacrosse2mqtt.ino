@@ -82,8 +82,6 @@ SX127x SX(LORA_CS, LORA_RST);
 #define ESP_MODEL_NAME    "ESPRESSIF IOT"
 #define ESP_DEVICE_NAME   "ESP STATION"
 
-//WebServer server(80);
-AsyncWebServer server(80);
 WiFiClient client;
 PubSubClient mqtt_client(client);
 const char *mqtt_id = "lacrosse2mqtt.esp";
@@ -104,8 +102,8 @@ void check_repeatedjobs()
         config.changed = false;
         mqtt_client.disconnect();
         if (config.mqtt_server.length() > 0) {
-            const char *server = config.mqtt_server.c_str();
-            mqtt_client.setServer(server, config.mqtt_port);
+            const char *_server = config.mqtt_server.c_str();
+            mqtt_client.setServer(_server, config.mqtt_port);
             mqtt_server_set = true; /* to avoid trying connection with invalid settings */
         } else
             Serial.println("MQTT server name not configured");
@@ -305,6 +303,7 @@ void setup(void)
 static int last_state = -1;
 void loop(void)
 {
+    handle_client();
 #ifdef DEBUG_DAVFS
     dav.handleClient();
 #endif
