@@ -194,6 +194,7 @@ void receive()
     if (!SX.Receive(payLoadSize))
         return;
 
+    digitalWrite(LED_BUILTIN, HIGH);
     rssi = SX.GetRSSI();
     rate = SX.GetDataRate();
     payload = SX.GetPayloadPointer();
@@ -252,6 +253,7 @@ void receive()
 
     update_display(&frame);
     SX.EnableReceiver(true);
+    digitalWrite(LED_BUILTIN, LOW);
 }
 
 void setup(void)
@@ -266,6 +268,7 @@ void setup(void)
     setup_web(); /* also loads config from LittleFS */
 
     pinMode(KEY_BUILTIN, INPUT);
+    pinMode(LED_BUILTIN, OUTPUT);
     pinMode(OLED_RST, OUTPUT);
     digitalWrite(OLED_RST, LOW); // set GPIO16 low to reset OLED
     delay(50);
