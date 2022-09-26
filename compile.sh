@@ -12,6 +12,7 @@ if [ "$IAM" = upload ]; then
 	fi
 	if ! [[ "$1" =~ "/dev/"* ]]; then
 		curl -v -F "image=@build/esp32.esp32.ttgo-lora32/lacrosse2mqtt.ino.bin" "$1"/update
+		echo
 		exit
 	fi
 	PARAM=(-v -p "$1")
