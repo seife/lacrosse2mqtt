@@ -49,6 +49,7 @@ unsigned long last_switch = 0;
 unsigned long last_display = 0;
 bool littlefs_ok;
 bool mqtt_ok;
+bool display_on = true;
 
 Config config;
 Cache fcache[SENSOR_NUM]; /* 128 IDs x 2 datarates */
@@ -148,6 +149,12 @@ void update_display(LaCrosse::Frame *frame)
     char tmp[32];
     last_display = millis();
     uint32_t now = uptime_sec();
+    if (display_on)
+        display.displayOn();
+    else {
+        display.displayOff();
+        return;
+    }
     snprintf(tmp, 31, "%dd %d:%02d:%02d", now / 86400, (now % 86400) / 3600, (now % 3600) / 60, now % 60);
     String status = "WiFi:" + wifi_disp + " up: " + String(tmp);
     bool s_invert = (now / 60) & 0x01; /* 60 seconds inverted, the next 60s not */
@@ -308,6 +315,24 @@ void setup(void)
 #endif
 }
 
+uint32_t check_button()
+{
+    static uint32_t low_at = 0;
+    static bool pressed = false;
+    if (digitalRead(KEY_BUILTIN) == LOW) {
+        if (! pressed)
+            low_at = millis();
+        pressed = true;
+        return 0;
+    }
+    if (! pressed)
+        return 0;
+    /* if button was pressed and now released, return how long
+     * it has been down */
+    pressed = false;
+    return millis() - low_at;
+}
+
 static int last_state = -1;
 void loop(void)
 {
@@ -315,11 +340,24 @@ void loop(void)
 #ifdef DEBUG_DAVFS
     dav.handleClient();
 #endif
+    uint32_t button_time = check_button();
+    if (button_time > 0) {
+        Serial.print("button_time: ");
+        Serial.println(button_time);
+    }
     if (wifi_state != STATE_WPS) {
         WiFiStatusCheck();
-        if (digitalRead(KEY_BUILTIN) == LOW)
+        if (button_time > 2000) {
             start_WPS();
+            button_time = 0;
+            display_on = true;
+        }
     }
+    if (button_time > 100) {
+        display_on = ! display_on;
+        update_display(NULL);
+    }
+
     check_repeatedjobs();
     receive();
     expire_cache();
