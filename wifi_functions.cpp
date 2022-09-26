@@ -18,35 +18,37 @@ const char *_wifi_state_str[] = {
 void WiFiEvent(WiFiEvent_t event)
 {
     switch (event) {
-        case SYSTEM_EVENT_STA_START:
+        case ARDUINO_EVENT_WIFI_STA_START:
             Serial.println("Station Mode Started");
             wifi_state = STATE_DISC;
             break;
-        case SYSTEM_EVENT_STA_GOT_IP:
+        case ARDUINO_EVENT_WIFI_STA_GOT_IP:
             Serial.printf("Connected to: %s, Got IP: ",WiFi.SSID().c_str());
             Serial.println(WiFi.localIP());
             wifi_state = STATE_CONN;
             break;
-        case SYSTEM_EVENT_STA_DISCONNECTED:
+        case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
             Serial.println("Disconnected from station, attempting reconnection");
-            wifi_state = STATE_DISC;
-            WiFi.reconnect();
+            if (wifi_state != STATE_WPS) {
+                wifi_state = STATE_DISC;
+                WiFi.reconnect();
+            }
             break;
-        case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
+        case ARDUINO_EVENT_WPS_ER_SUCCESS:
             Serial.printf("WPS Successful, stopping WPS and connecting to: %s\r\n", WiFi.SSID().c_str());
             esp_wifi_wps_disable();
             wifi_state = STATE_DISC;
             delay(10);
             WiFi.begin();
             break;
-        case SYSTEM_EVENT_STA_WPS_ER_FAILED:
+        case ARDUINO_EVENT_WPS_ER_FAILED:
             Serial.println("WPS Failed, retrying normal connect");
             esp_wifi_wps_disable();
             wifi_state = STATE_DISC;
             delay(10);
             WiFi.begin();
             break;
-        case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
+        case ARDUINO_EVENT_WPS_ER_TIMEOUT:
             Serial.println("WPS Timedout, trying normal connect...");
             wifi_state = STATE_DISC;
             esp_wifi_wps_disable();
@@ -55,10 +57,8 @@ void WiFiEvent(WiFiEvent_t event)
             WiFi.begin();
             break;
         default:
-/*
-            Serial.print("WPS UNKNOWN EVENT: ");
+            Serial.print("WPS/WIFI UNKNOWN EVENT: ");
             Serial.println(event);
-*/
             break;
     }
 }
