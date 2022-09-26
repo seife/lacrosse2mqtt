@@ -46,7 +46,7 @@ const int freq = 868290;   /* frequency in kHz, 868300 did not receive all senso
 
 unsigned long last_reconnect;
 unsigned long last_switch = 0;
-unsigned long last_display = 0;
+// unsigned long last_display = 0;
 bool littlefs_ok;
 bool mqtt_ok;
 bool display_on = true;
@@ -147,7 +147,7 @@ String wifi_disp;
 void update_display(LaCrosse::Frame *frame)
 {
     char tmp[32];
-    last_display = millis();
+    // last_display = millis();
     uint32_t now = uptime_sec();
     if (display_on)
         display.displayOn();
