@@ -1,6 +1,8 @@
 #ifndef _GLOBALS_H
 #define _GLOBALS_H
 
+/* if not heltec_lora_32_v2 board... */
+#ifndef WIFI_LoRa_32_V2
 /* if built with board "ttgo-lora32-v1" these are defined.
  * but this board does not define filesystem layouts.
  * plain "esp32 dev module" does not define these...
@@ -18,7 +20,6 @@
 #define LORA_CS   18  // GPIO18 - SX1276 CS
 #define LORA_RST  14  // GPIO14 - SX1276 RST
 #define LORA_IRQ  26  // GPIO26 - SX1276 IRQ (interrupt request)
-
 static const uint8_t KEY_BUILTIN = 0;
 #endif
 #ifndef LED_BUILTIN
@@ -26,7 +27,18 @@ static const uint8_t LED_BUILTIN = 2;
 #define BUILTIN_LED  LED_BUILTIN // backward compatibility
 #define LED_BUILTIN LED_BUILTIN
 #endif
-
+#else
+/* heltec_lora_32_v2 board */
+#define OLED_SDA  SDA_OLED
+#define OLED_SCL  SCL_OLED
+#define OLED_RST  RST_OLED
+#define LORA_CS   SS
+#define LORA_RST  RST_LoRa
+#define LORA_IRQ  DIO0
+#define LORA_MISO MISO
+#define LORA_MOSI MOSI
+#define LORA_SCK  SCK
+#endif
 /* how many bytes is our data frame long? */
 #define FRAME_LENGTH 5
 /* maximum number of sensors: 64 x 2 channels x 2 datarates */
