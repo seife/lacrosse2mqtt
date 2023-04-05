@@ -260,8 +260,7 @@ void setup(void)
 {
     config.mqtt_port = 1883; /* default */
     Serial.begin(115200);
-    WiFi.onEvent(WiFiEvent);
-    WiFi.begin();
+    start_WiFi("lacrosse2mqtt");
     littlefs_ok = LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED);
     if (!littlefs_ok)
         Serial.println("LittleFS Mount Failed");
