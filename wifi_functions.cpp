@@ -1,3 +1,8 @@
+/*
+ * WiFi helper functions for:
+ *    WPS
+ *    check connection state
+ */
 
 #include "wifi_functions.h"
 
@@ -23,22 +28,21 @@ void WiFiEvent(WiFiEvent_t event)
             wifi_state = STATE_DISC;
             break;
         case ARDUINO_EVENT_WIFI_STA_GOT_IP:
-            Serial.printf("Connected to: %s, Got IP: ",WiFi.SSID().c_str());
+            Serial.printf("Connected to: %s (%s), Got IP: ",WiFi.SSID().c_str(),WiFi.BSSIDstr().c_str());
             Serial.println(WiFi.localIP());
             wifi_state = STATE_CONN;
             break;
         case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
             Serial.println("Disconnected from station, attempting reconnection");
-            if (wifi_state != STATE_WPS) {
-                wifi_state = STATE_DISC;
-                WiFi.reconnect();
-            }
+            wifi_state = STATE_DISC;
+            WiFi.reconnect();
             break;
         case ARDUINO_EVENT_WPS_ER_SUCCESS:
             Serial.printf("WPS Successful, stopping WPS and connecting to: %s\r\n", WiFi.SSID().c_str());
             esp_wifi_wps_disable();
+            WiFi.disconnect(); /* this seems to make this more reliable (and quick) */
             wifi_state = STATE_DISC;
-            delay(10);
+            delay(100);
             WiFi.begin();
             break;
         case ARDUINO_EVENT_WPS_ER_FAILED:
@@ -83,6 +87,15 @@ void start_WPS()
 #endif
     Serial.println("end start_WPS()");
 }
+
+void start_WiFi(const char *hostname)
+{
+    if (hostname)
+        WiFi.setHostname(hostname);
+    WiFi.onEvent(WiFiEvent);
+    WiFi.begin();
+}
+
 
 void WiFiStatusCheck()
 {
