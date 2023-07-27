@@ -360,8 +360,8 @@ void loop(void)
         update_display(NULL);
     }
 
-    check_repeatedjobs();
     receive();
+    check_repeatedjobs();
     expire_cache();
     if (last_state != wifi_state) {
         last_state = wifi_state;
