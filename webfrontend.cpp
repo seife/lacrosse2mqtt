@@ -4,6 +4,7 @@
 #include <HTTPUpdateServer.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
+#include <rom/rtc.h>
 
 /* git version passed by compile.sh */
 #ifndef LACROSSE2MQTT_VERSION
@@ -276,12 +277,46 @@ void add_header(String &s, String title)
         "<H1>" + title + "</H1>\n";
 }
 
+/* from tasmota */
+String ESP32GetResetReason(uint32_t cpu_no) {
+    // tools\sdk\include\esp32\rom\rtc.h
+    switch (rtc_get_reset_reason(cpu_no)) {
+        case POWERON_RESET:         return F("Vbat power on reset");
+        case SW_RESET:              return F("Software reset digital core");
+        case OWDT_RESET:            return F("Legacy watch dog reset digital core");
+        case DEEPSLEEP_RESET:       return F("Deep Sleep reset digital core");
+        case SDIO_RESET:            return F("Reset by SLC module, reset digital core");
+        case TG0WDT_SYS_RESET:      return F("Timer Group0 Watch dog reset digital core");
+        case TG1WDT_SYS_RESET:      return F("Timer Group1 Watch dog reset digital core");
+        case RTCWDT_SYS_RESET:      return F("RTC Watch dog Reset digital core");
+        case INTRUSION_RESET:       return F("Instrusion tested to reset CPU");
+        case TGWDT_CPU_RESET:       return F("Time Group reset CPU");
+        case SW_CPU_RESET:          return F("Software reset CPU");
+        case RTCWDT_CPU_RESET:      return F("RTC Watch dog Reset CPU");
+        case EXT_CPU_RESET:         return F("for APP CPU, reseted by PRO CPU");
+        case RTCWDT_BROWN_OUT_RESET:return F("Reset when the vdd voltage is not stable");
+        case RTCWDT_RTC_RESET:      return F("RTC Watch dog reset digital core and rtc module");
+        /* esp32-cX?
+        case 17 : return F("Time Group1 reset CPU");                            // 17  -                 TG1WDT_CPU_RESET
+        case 18 : return F("Super watchdog reset digital core and rtc module"); // 18  -                 SUPER_WDT_RESET
+        case 19 : return F("Glitch reset digital core and rtc module");         // 19  -                 GLITCH_RTC_RESET
+        case 20 : return F("Efuse reset digital core");                         // 20                    EFUSE_RESET
+        case 21 : return F("Usb uart reset digital core");                      // 21                    USB_UART_CHIP_RESET
+        case 22 : return F("Usb jtag reset digital core");                      // 22                    USB_JTAG_CHIP_RESET
+        case 23 : return F("Power glitch reset digital core and rtc module");   // 23                    POWER_GLITCH_RESET
+         */
+        default: break;
+    }
+    return F("No meaning"); // 0 and undefined
+}
+
 void add_sysinfo_footer(String &s)
 {
     s += "<p>"
         "System information: Uptime " + time_string() +
         ", Software version: " + LACROSSE2MQTT_VERSION +
         ", Built: " + __DATE__ + " " + __TIME__ +
+        ", Reset reason: " + ESP32GetResetReason(0) +
         "</p>\n";
 }
 
