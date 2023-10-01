@@ -101,7 +101,8 @@ void check_repeatedjobs()
     if (config.changed) {
         Serial.println("MQTT config changed. Dis- and reconnecting...");
         config.changed = false;
-        mqtt_client.disconnect();
+        if (mqtt_ok)
+            mqtt_client.disconnect();
         if (config.mqtt_server.length() > 0) {
             const char *_server = config.mqtt_server.c_str();
             mqtt_client.setServer(_server, config.mqtt_port);
