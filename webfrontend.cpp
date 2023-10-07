@@ -277,6 +277,8 @@ void add_header(String &s, String title)
         "<H1>" + title + "</H1>\n";
 }
 
+/* not yet implemented for s3 */
+#ifndef CONFIG_IDF_TARGET_ESP32S3
 /* from tasmota */
 String ESP32GetResetReason(uint32_t cpu_no) {
     // tools\sdk\include\esp32\rom\rtc.h
@@ -309,6 +311,7 @@ String ESP32GetResetReason(uint32_t cpu_no) {
     }
     return F("No meaning"); // 0 and undefined
 }
+#endif
 
 void add_sysinfo_footer(String &s)
 {
@@ -316,7 +319,9 @@ void add_sysinfo_footer(String &s)
         "System information: Uptime " + time_string() +
         ", Software version: " + LACROSSE2MQTT_VERSION +
         ", Built: " + __DATE__ + " " + __TIME__ +
+#ifndef CONFIG_IDF_TARGET_ESP32S3
         ", Reset reason: " + ESP32GetResetReason(0) +
+#endif
         "</p>\n";
 }
 

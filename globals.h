@@ -2,7 +2,7 @@
 #define _GLOBALS_H
 
 /* if not heltec_lora_32_v2 board... */
-#ifndef WIFI_LoRa_32_V2
+#if ! defined(WIFI_LoRa_32_V2) && ! defined(WIFI_LoRa_32_V3)
 /* if built with board "ttgo-lora32-v1" these are defined.
  * but this board does not define filesystem layouts.
  * plain "esp32 dev module" does not define these...
@@ -28,7 +28,7 @@ static const uint8_t LED_BUILTIN = 2;
 #define LED_BUILTIN LED_BUILTIN
 #endif
 #else
-/* heltec_lora_32_v2 board */
+/* heltec_lora_32_v2/3 board */
 #define OLED_SDA  SDA_OLED
 #define OLED_SCL  SCL_OLED
 #define OLED_RST  RST_OLED
@@ -38,6 +38,9 @@ static const uint8_t LED_BUILTIN = 2;
 #define LORA_MISO MISO
 #define LORA_MOSI MOSI
 #define LORA_SCK  SCK
+#ifdef WIFI_LoRa_32_V3
+static const uint8_t KEY_BUILTIN = 0;
+#endif
 #endif
 /* how many bytes is our data frame long? */
 #define FRAME_LENGTH 5

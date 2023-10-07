@@ -3,6 +3,7 @@
 IAM=${0##*/}
 IAM=${IAM%-heltec.sh}
 
+: "${HELTEC_BOARD:=V2}"
 MYVERSION=$(git describe --always --dirty)
 PARAM=()
 if [ "$IAM" = upload ]; then
@@ -11,7 +12,7 @@ if [ "$IAM" = upload ]; then
 		exit 1
 	fi
 	if ! [[ "$1" =~ "/dev/"* ]]; then
-		curl -v -F "image=@build/esp32.esp32.heltec_wifi_lora_32_V2/lacrosse2mqtt.ino.bin" "$1"/update
+		curl -v -F "image=@build/esp32.esp32.heltec_wifi_lora_32_${HELTEC_BOARD}/lacrosse2mqtt.ino.bin" "$1"/update
 		echo
 		exit
 	fi
@@ -22,4 +23,4 @@ else
 	PARAM=(--build-property "build.extra_flags.esp32=-DARDUINO_USB_CDC_ON_BOOT=0 -DLACROSSE2MQTT_VERSION=\"$MYVERSION\"")
 fi
 
-arduino-cli "$IAM" -b esp32:esp32:heltec_wifi_lora_32_V2 "${PARAM[@]}" $@
+arduino-cli "$IAM" -b esp32:esp32:heltec_wifi_lora_32_"${HELTEC_BOARD}" "${PARAM[@]}" "$@"
