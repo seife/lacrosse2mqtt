@@ -35,6 +35,10 @@
 
 #define FORMAT_LITTLEFS_IF_FAILED false
 
+/* if display is default to off, keep it on for this many seconds after power on
+ * or a wifi change event */
+#define DISPLAY_TIMEOUT 300
+
 #ifdef DEBUG_DAVFS
 WiFiServer tcp(81);
 ESPWebDAV dav;
@@ -50,6 +54,7 @@ unsigned long last_switch = 0;
 bool littlefs_ok;
 bool mqtt_ok;
 bool display_on = true;
+uint32_t auto_display_on = 0;
 
 Config config;
 Cache fcache[SENSOR_NUM]; /* 128 IDs x 2 datarates */
@@ -152,7 +157,11 @@ void update_display(LaCrosse::Frame *frame)
     uint32_t now = uptime_sec();
     if (display_on)
         display.displayOn();
-    else {
+    else if (now < auto_display_on + DISPLAY_TIMEOUT) {
+        // Serial.println("update_display: auto_on not yet expired " + String(now - auto_display_on));
+        display.displayOn();
+    } else {
+        // Serial.println("auto_display_on: " + String(auto_display_on) + " now: " + String(now));
         display.displayOff();
         return;
     }
@@ -266,6 +275,7 @@ void setup(void)
     if (!littlefs_ok)
         Serial.println("LittleFS Mount Failed");
     setup_web(); /* also loads config from LittleFS */
+    display_on = config.display_on;
 
     pinMode(KEY_BUILTIN, INPUT);
     pinMode(LED_BUILTIN, OUTPUT);
@@ -353,11 +363,13 @@ void loop(void)
         if (button_time > 2000) {
             start_WPS();
             button_time = 0;
-            display_on = true;
+            auto_display_on = uptime_sec();
         }
     }
-    if (button_time > 100) {
+    if (button_time > 100 && button_time <= 2000) {
         display_on = ! display_on;
+        /* ensure that display can be turned off while timeout is still active */
+        auto_display_on = uptime_sec() - DISPLAY_TIMEOUT - 1;
         update_display(NULL);
     }
 
@@ -367,6 +379,7 @@ void loop(void)
     if (last_state != wifi_state) {
         last_state = wifi_state;
         wifi_disp = String(_wifi_state_str[wifi_state]);
+        auto_display_on = uptime_sec();
         update_display(NULL);
     }
 }

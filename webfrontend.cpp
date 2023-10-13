@@ -87,6 +87,7 @@ bool load_idmap()
 
 bool load_config()
 {
+    config.display_on = true; // default
     if (!littlefs_ok)
         return false;
     File cfg = LittleFS.open("/config.json");
@@ -103,9 +104,17 @@ bool load_config()
             const char *tmp = doc["mqtt_server"];
             config.mqtt_server = String(tmp);
         }
+        if (doc.containsKey("display_on"))
+            config.display_on = doc["display_on"];
         Serial.println("result of config.json: "
                        "mqtt_server '" + config.mqtt_server + "' "
-                       "mqtt_port: " + String(config.mqtt_port));
+                       "mqtt_port: " + String(config.mqtt_port) + " "
+                       "display_on: " + String(config.display_on));
+        cfg.close();
+        Serial.println("--- raw config.json start ---");
+        cfg = LittleFS.open("/config.json");
+        Serial.println(read_file(cfg));
+        Serial.println("---- raw config.json end ----");
         config.changed = true;
     }
     cfg.close();
@@ -124,6 +133,7 @@ bool save_config()
     StaticJsonDocument<256> doc;
     doc["mqtt_port"] = config.mqtt_port;
     doc["mqtt_server"] = config.mqtt_server;
+    doc["display_on"] = config.display_on;
     if (serializeJson(doc, cfg) == 0) {
         Serial.println(F("Failed to write /config.json"));
         ret = false;
@@ -333,6 +343,8 @@ void handle_index() {
     server.send(200, "text/html", index);
 }
 
+const String on = "on";
+const String off = "off";
 static bool config_changed = false;
 void handle_config() {
     static unsigned long token = millis();
@@ -387,6 +399,11 @@ void handle_config() {
                 delay(100);
         }
     }
+    if (server.hasArg("display")) {
+        String _on = server.arg("display");
+        config.display_on = _on.toInt();
+        config_changed = true;
+    }
     String resp;
     add_header(resp, "LaCrosse2mqtt Configuration");
     add_current_table(resp, true);
@@ -432,6 +449,12 @@ void handle_config() {
             "<input type=\"hidden\" name=\"format\" value=\"" + String(token) + "\"><button type=\"submit\">Yes, format!</button>"
             "</form>\n";
     }
+    resp += "<p></p>\n"
+            "<form action=\"/config.html\">"
+            "Display is default <b>" + (config.display_on ? on : off) + "</b>."
+            "<input type=\"hidden\" name=\"display\" value=\"" + String(!config.display_on) +
+            "\"><button type=\"submit\">Switch to default " + (config.display_on ? off : on) + "</button>"
+            "</form>\n";
     resp += "<p><a href=\"/update\">Update software</a></p>\n"
             "<p><a href=\"/\">Main page</a></p>\n";
     add_sysinfo_footer(resp);

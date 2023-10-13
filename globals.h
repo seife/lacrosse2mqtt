@@ -53,6 +53,7 @@ struct Cache {
 struct Config {
     String mqtt_server;
     uint16_t mqtt_port;
+    bool display_on;
     bool changed;
 };
 
