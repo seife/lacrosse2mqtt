@@ -428,7 +428,7 @@ void handle_config() {
     if (!littlefs_ok) {
         resp += "<p></p>\n"
             "<form action=\"/config.html\">"
-            "LittleFS seems damaged. Format it?"
+            "<strong>LittleFS seems damaged. Saving will not work.</strong> Format it? "
             "<input type=\"hidden\" name=\"format\" value=\"" + String(token) + "\"><button type=\"submit\">Yes, format!</button>"
             "</form>\n";
     }
