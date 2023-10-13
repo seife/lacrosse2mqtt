@@ -66,8 +66,10 @@ bool LaCrosse::DisplayFrame(byte *data, struct Frame *f)
 
 bool LaCrosse::TryHandleData(byte *data, struct Frame *f)
 {
+#if 0
     if ((data[0] & 0xF0) != 0x90)
         return false;
+#endif
     DecodeFrame(data, f);
     return f->valid;
 }
