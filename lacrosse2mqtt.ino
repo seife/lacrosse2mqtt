@@ -182,7 +182,6 @@ void update_display(LaCrosse::Frame *frame)
         display.clear();
     }
 
-    display.drawString(0, 0, status);
     if (frame) {
         if (frame->valid) {
             if (id2name[frame->ID].length() > 0) {
@@ -198,7 +197,21 @@ void update_display(LaCrosse::Frame *frame)
         }
         display.println();
     }
-    display.drawLogBuffer(0, 14);
+    /* new display lib now uses whole display for log window,
+     * so we need to clear top area for status line, depending on invert or not */
+    OLEDDISPLAY_COLOR col = display.getColor();
+    switch (col) {
+        case BLACK:
+            display.setColor(WHITE);
+            break;
+        case WHITE:
+            display.setColor(BLACK);
+            break;
+    }
+    display.fillRect(0, 0, 128, 14);
+    /* now draw status line */
+    display.setColor(col);
+    display.drawString(0, 0, status);
     display.display();
 }
 
@@ -308,7 +321,6 @@ void setup(void)
 #endif
     display.drawString(0,0,"LaCrosse2mqtt");
     display.display();
-    display.setLogBuffer(4, 32);
 
     last_switch = millis();
 
