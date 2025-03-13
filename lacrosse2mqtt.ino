@@ -59,6 +59,7 @@ uint32_t auto_display_on = 0;
 Config config;
 Cache fcache[SENSOR_NUM]; /* 128 IDs x 2 datarates */
 String id2name[SENSOR_NUM];
+uint8_t hass_cfg[SENSOR_NUM];
 
 /* TTGO board OLED pins to ESP32 GPIOs */
 /*
@@ -90,9 +91,10 @@ SX127x SX(LORA_CS, LORA_RST);
 
 WiFiClient client;
 PubSubClient mqtt_client(client);
-const char *mqtt_id = "lacrosse2mqtt.esp";
+String mqtt_id;
 const String pretty_base = "climate/";
 const String pub_base = "lacrosse/id_";
+const String hass_base = "homeassistant/sensor/";
 bool mqtt_server_set = false;
 
 void check_repeatedjobs()
@@ -128,9 +130,11 @@ void check_repeatedjobs()
                 pass = config.mqtt_pass.c_str();
             }
             Serial.print("MQTT RECONNECT...");
-            if (mqtt_client.connect(mqtt_id, user, pass))
+            if (mqtt_client.connect(mqtt_id.c_str(), user, pass)) {
                 Serial.println("OK!");
-            else
+                for (int i = 0; i < SENSOR_NUM; i++)
+                    hass_cfg[i] = 0;
+            } else
                 Serial.println("FAILED");
         }
         last_reconnect = now;
@@ -140,6 +144,73 @@ void check_repeatedjobs()
         update_display(NULL);       /* is received. Indicates that the thing is still alive ;-) */
 #endif
     mqtt_ok = mqtt_client.connected();
+}
+
+void pub_hass_config(int what, byte ID)
+{
+    static const String name[2] = { "Luftfeuchtigkeit", "Temperatur" };
+    static const String value[2] = { "humi", "temp" };
+    static const String dclass[2] = { "humidity", "temperature" };
+    static const String unit[2] = { "%", "°C" };
+    String where = id2name[ID];
+
+    if (!config.ha_discovery)
+        return;
+    /* only send once */
+    if (hass_cfg[ID] & (1 << what))
+        return;
+    hass_cfg[ID] |= (1 << what);
+
+    String where_lower = where;
+    where_lower.toLowerCase();
+    /*
+     * mosquitto_pub -h server -t 'homeassistant/sensor/lacrosse2mqtt_aussen_temp/config' -m \
+     * '{
+          "state_class": "measurement",
+          "device_class": "temperature",
+          "state_topic":"climate/Aussen/temp",
+          "unique_id":"sensor.lacrosse2mqtt.aussen.temp",
+          "unit_of_measurement":"°C",
+          "name":"Temperatur Aussen",
+          "value_template":"{{ value }}"
+      }'
+     * {
+          "state_class": "measurement",
+          "device_class": "humidity",
+          "state_topic": "climate/Stube/humi",
+          "unique_id": "sensor.lacrosse2mqtt.stube.humi",
+          "unit_of_measurement": "%",
+          "name": "Luftfeuchtigkeit Stube2",
+          "value_template": "{{ value }}"
+       }
+     */
+    String uid = mqtt_id + "_" + where_lower + "_" + value[what];
+    String topic = hass_base + uid + "/config";
+    String msg = "{"
+            "\"device\":{"
+                "\"identifiers\":[\"" + mqtt_id + value[what]+"\"],"
+                "\"name\":\""+name[what]+"\","
+                "\"manufacturer\":\"Lacrosse2MQTT\","
+                "\"model\":\"esp32\""
+            "},"
+            "\"origin\":{"
+                "\"name\":\"lacrosse2mqtt\","
+                "\"url\":\"https://github.com/seife/lacrosse2mqtt\""
+            "},"
+            "\"state_class\":\"measurement\","
+            "\"device_class\":\"" + dclass[what]+ "\","
+            "\"unit_of_measurement\":\"" + unit[what] + "\","
+            "\"unique_id\":\"" + uid + "\","
+            "\"state_topic\":\"" + pretty_base + where+"/"+value[what]+"\","
+            "\"name\":\""+where+"\"" +
+        "}";
+    Serial.println(topic);
+    Serial.println(topic.length());
+    Serial.println(msg);
+    Serial.println(msg.length());
+    mqtt_client.beginPublish(topic.c_str(), msg.length(), true);
+    mqtt_client.print(msg);
+    mqtt_client.endPublish();
 }
 
 void expire_cache()
@@ -264,13 +335,17 @@ void receive()
             pub = pretty_base + id2name[ID] + "/";
             if (abs(oldframe.temp - frame.temp) > 2.0)
                 Serial.println(String("skipping invalid temp diff bigger than 2K: ") + String(oldframe.temp - frame.temp,1));
-            else
+            else {
+                pub_hass_config(1, ID);
                 mqtt_client.publish((pub + "temp").c_str(), String(frame.temp, 1).c_str());
+            }
             if (frame.humi <= 100) {
                 if (abs(oldframe.humi - frame.humi) > 10)
                     Serial.println(String("skipping invalid humi diff > 10%: ") + String(oldframe.humi - frame.humi, DEC));
-                else
+                else {
+                    pub_hass_config(0, ID);
                     mqtt_client.publish((pub + "humi").c_str(), String(frame.humi, DEC).c_str());
+                }
             }
         }
 
@@ -287,6 +362,9 @@ void receive()
 
 void setup(void)
 {
+    char tmp[32];
+    snprintf(tmp, 31, "lacrosse2mqtt_%06lX", (long)(ESP.getEfuseMac() >> 24));
+    mqtt_id = String(tmp);
     config.mqtt_port = 1883; /* default */
     Serial.begin(115200);
     start_WiFi("lacrosse2mqtt");
@@ -312,6 +390,7 @@ void setup(void)
     delay(1000); /* for Serial to really work */
 
     Serial.println("TTGO LORA lacrosse2mqtt converter");
+    Serial.println(mqtt_id);
 #if 0
     Serial.println("LaCrosse::Frame Cache fcache id2name size: ");
     Serial.println(sizeof(LaCrosse::Frame));

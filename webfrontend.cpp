@@ -89,6 +89,7 @@ bool load_idmap()
 bool load_config()
 {
     config.display_on = true; // default
+    config.ha_discovery = false; // default
     if (!littlefs_ok)
         return false;
     File cfg = LittleFS.open("/config.json");
@@ -115,10 +116,13 @@ bool load_config()
         }
         if (doc.containsKey("display_on"))
             config.display_on = doc["display_on"];
+        if (doc.containsKey("ha_discovery"))
+            config.ha_discovery = doc["ha_discovery"];
         Serial.println("result of config.json: "
                        "mqtt_server '" + config.mqtt_server + "' "
                        "mqtt_port: " + String(config.mqtt_port) + " "
                        "mqtt_user: '" + config.mqtt_user + "' "
+                       "ha_discovery: " + String(config.ha_discovery)+ " "
                        "display_on: " + String(config.display_on));
         cfg.close();
         Serial.println("--- raw config.json start ---");
@@ -146,6 +150,7 @@ bool save_config()
     doc["mqtt_user"] = config.mqtt_user;
     doc["mqtt_pass"] = config.mqtt_pass;
     doc["display_on"] = config.display_on;
+    doc["ha_discovery"] = config.ha_discovery;
     if (serializeJson(doc, cfg) == 0) {
         Serial.println(F("Failed to write /config.json"));
         ret = false;
@@ -357,6 +362,7 @@ void handle_index() {
 
 const String on = "on";
 const String off = "off";
+const String checked = " checked=\"checked\"";
 static bool config_changed = false;
 void handle_config() {
     static unsigned long token = millis();
@@ -423,8 +429,17 @@ void handle_config() {
     }
     if (server.hasArg("display")) {
         String _on = server.arg("display");
-        config.display_on = _on.toInt();
-        config_changed = true;
+        int tmp = _on.toInt();
+        if (tmp != config.display_on)
+            config_changed = true;
+        config.display_on = tmp;
+    }
+    if (server.hasArg("ha_disc")) {
+        String _on = server.arg("ha_disc");
+        int tmp = _on.toInt();
+        if (tmp != config.ha_discovery)
+            config_changed = true;
+        config.ha_discovery = tmp;
     }
     String resp;
     add_header(resp, "LaCrosse2mqtt Configuration");
@@ -477,9 +492,26 @@ void handle_config() {
     }
     resp += "<p></p>\n"
             "<form action=\"/config.html\">"
+#if 0
             "Display is default <b>" + (config.display_on ? on : off) + "</b>."
             "<input type=\"hidden\" name=\"display\" value=\"" + String(!config.display_on) +
             "\"><button type=\"submit\">Switch to default " + (config.display_on ? off : on) + "</button>"
+#endif
+            "<table><tr>"
+            "<td>Display is default</td>"
+            "<td><input type=\"radio\" id=\"d_on\" name=\"display\" value=\"1\" " + (config.display_on?checked:String()) + "/>"
+            "<label for=\"d_on\">on</label></td>"
+            "<td><input type=\"radio\" id=\"d_off\" name=\"display\" value=\"0\"" + (config.display_on?String():checked) + "/>"
+            "<label for=\"d_off\">off</label></td>"
+            "<td><button type=\"submit\">Submit</button></td>"
+            "</tr><tr>"
+            "<td>Home Assistant discovery</td>"
+            "<td><input type=\"radio\" id=\"ha_on\" name=\"ha_disc\" value=\"1\" " + (config.ha_discovery?checked:String()) + "/>"
+            "<label for=\"ha_on\">on</label></td>"
+            "<td><input type=\"radio\" id=\"ha_off\" name=\"ha_disc\" value=\"0\"" + (config.ha_discovery?String():checked) + "/>"
+            "<label for=\"ha_off\">off</label></td>"
+            "<td><button type=\"submit\">Submit</button></td>"
+            "</tr></table>"
             "</form>\n";
     resp += "<p><a href=\"/update\">Update software</a></p>\n"
             "<p><a href=\"/\">Main page</a></p>\n";

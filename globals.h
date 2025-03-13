@@ -57,6 +57,7 @@ struct Config {
     uint16_t mqtt_port;
     bool display_on;
     bool changed;
+    bool ha_discovery;
 };
 
 extern Config config;
