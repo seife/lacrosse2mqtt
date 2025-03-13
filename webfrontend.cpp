@@ -5,6 +5,7 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <rom/rtc.h>
+#include "WiFi.h"
 
 /* git version passed by compile.sh */
 #ifndef LACROSSE2MQTT_VERSION
