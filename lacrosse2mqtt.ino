@@ -121,8 +121,14 @@ void check_repeatedjobs()
     }
     if (!mqtt_client.connected() && now - last_reconnect > 5 * 1000) {
         if (mqtt_server_set) {
+            const char *user = NULL;
+            const char *pass = NULL;
+            if (config.mqtt_user.length()) {
+                user = config.mqtt_user.c_str();
+                pass = config.mqtt_pass.c_str();
+            }
             Serial.print("MQTT RECONNECT...");
-            if (mqtt_client.connect(mqtt_id))
+            if (mqtt_client.connect(mqtt_id, user, pass))
                 Serial.println("OK!");
             else
                 Serial.println("FAILED");

@@ -104,11 +104,20 @@ bool load_config()
             const char *tmp = doc["mqtt_server"];
             config.mqtt_server = String(tmp);
         }
+        if (doc["mqtt_user"]) {
+            const char *tmp = doc["mqtt_user"];
+            config.mqtt_user = String(tmp);
+        }
+        if (doc["mqtt_pass"]) {
+            const char *tmp = doc["mqtt_pass"];
+            config.mqtt_pass = String(tmp);
+        }
         if (doc.containsKey("display_on"))
             config.display_on = doc["display_on"];
         Serial.println("result of config.json: "
                        "mqtt_server '" + config.mqtt_server + "' "
                        "mqtt_port: " + String(config.mqtt_port) + " "
+                       "mqtt_user: '" + config.mqtt_user + "' "
                        "display_on: " + String(config.display_on));
         cfg.close();
         Serial.println("--- raw config.json start ---");
@@ -133,6 +142,8 @@ bool save_config()
     StaticJsonDocument<256> doc;
     doc["mqtt_port"] = config.mqtt_port;
     doc["mqtt_server"] = config.mqtt_server;
+    doc["mqtt_user"] = config.mqtt_user;
+    doc["mqtt_pass"] = config.mqtt_pass;
     doc["display_on"] = config.display_on;
     if (serializeJson(doc, cfg) == 0) {
         Serial.println(F("Failed to write /config.json"));
@@ -371,6 +382,16 @@ void handle_config() {
         config.changed = true;
         config_changed = true;
     }
+    if (server.hasArg("mqtt_user")) {
+        config.mqtt_user = server.arg("mqtt_user");
+        config.changed = true;
+        config_changed = true;
+    }
+    if (server.hasArg("mqtt_pass")) {
+        config.mqtt_pass = server.arg("mqtt_pass");
+        config.changed = true;
+        config_changed = true;
+    }
     if (server.hasArg("save")) {
         if (server.arg("save") == String(token)) {
             Serial.println("SAVE!");
@@ -428,6 +449,10 @@ void handle_config() {
             "<tr>\n"
                 "<td>name / IP address:</td><td><input name=\"mqtt_server\" value=\"" + config.mqtt_server + "\"></td>"
                 "<td>Port:</td><td><input type=\"number\" name=\"mqtt_port\" value=\"" + String(config.mqtt_port) + "\"></td>"
+            "</tr>\n"
+            "<tr>\n"
+                "<td>Username (empty to disable):</td><td><input name=\"mqtt_user\" value=\"" + config.mqtt_user + "\"></td>"
+                "<td>Password:</td><td><input  name=\"mqtt_pass\" value=\"" + String(config.mqtt_pass) + "\"></td>"
                 "<td><button type=\"submit\">Submit</button></td>\n"
             "</tr>\n"
         "</table>\n"
