@@ -11,7 +11,9 @@ if [ "$IAM" = upload ]; then
 		exit 1
 	fi
 	if ! [[ "$1" =~ "/dev/"* ]]; then
-		curl -v -F "image=@build/esp32.esp32.ttgo-lora32/lacrosse2mqtt.ino.bin" "$1"/update
+		curl -v -F "image=@build/esp32.esp32.ttgo-lora32/lacrosse2mqtt.ino.bin" \
+			-H "Origin: http://$1" \
+			"$1"/update
 		echo
 		exit
 	fi
