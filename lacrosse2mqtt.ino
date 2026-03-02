@@ -152,6 +152,7 @@ void pub_hass_config(int what, byte ID)
     static const String value[2] = { "humi", "temp" };
     static const String dclass[2] = { "humidity", "temperature" };
     static const String unit[2] = { "%", "°C" };
+    static const String mdi[2] = { "water-percent", "thermometer" };
     String where = id2name[ID];
 
     if (!config.ha_discovery)
@@ -188,8 +189,8 @@ void pub_hass_config(int what, byte ID)
     String topic = hass_base + uid + "/config";
     String msg = "{"
             "\"device\":{"
-                "\"identifiers\":[\"" + mqtt_id + value[what]+"\"],"
-                "\"name\":\""+name[what]+"\","
+                "\"identifiers\":[\"" + mqtt_id + "_" + where_lower + "\"],"
+                "\"name\":\"" + where + "\"," // this is what defines the "group" of measurements
                 "\"manufacturer\":\"Lacrosse2MQTT\","
                 "\"model\":\"esp32\""
             "},"
@@ -202,7 +203,8 @@ void pub_hass_config(int what, byte ID)
             "\"unit_of_measurement\":\"" + unit[what] + "\","
             "\"unique_id\":\"" + uid + "\","
             "\"state_topic\":\"" + pretty_base + where+"/"+value[what]+"\","
-            "\"name\":\""+where+"\"" +
+            "\"name\":\"" + name[what] + "\"," // this is the name of the actual measurement
+            "\"icon\":\"mdi:" + mdi[what] + "\""
         "}";
     Serial.println(topic);
     Serial.println(topic.length());
