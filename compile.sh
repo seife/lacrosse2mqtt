@@ -22,6 +22,7 @@ if [ "$IAM" = upload ]; then
 else
 	# PARAM=(--build-property "build.defines=-DLACROSSE2MQTT_VERSION=\"$MYVERSION\"") # pre esp32-arduino 2.0
 	PARAM=(--build-property "build.extra_flags.esp32=-DARDUINO_USB_CDC_ON_BOOT=0 -DLACROSSE2MQTT_VERSION=\"$MYVERSION\"")
+	PARAM+=(--warnings all)
 fi
 
 arduino-cli "$IAM" -b esp32:esp32:ttgo-lora32:Revision=TTGO_LoRa32_V1 "${PARAM[@]}" $@
