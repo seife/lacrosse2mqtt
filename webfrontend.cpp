@@ -33,13 +33,13 @@ int name2id(const char *fname, const int start = 0)
 
 String time_string(void)
 {
-    uint32_t now = uptime_sec();
+    unsigned int now = (unsigned int)uptime_sec();
     char timestr[10];
     String ret = "";
     if (now >= 24*60*60)
         ret += String(now / (24*60*60)) + "d ";
     now %= 24*60*60;
-    snprintf(timestr, 10, "%02d:%02d:%02d", now / (60*60), (now % (60*60)) / 60, now % 60);
+    snprintf(timestr, 10, "%02u:%02u:%02u", now / (60*60), (now % (60*60)) / 60, now % 60);
     ret += String(timestr);
     return ret;
 }

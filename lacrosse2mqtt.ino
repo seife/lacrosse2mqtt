@@ -234,7 +234,7 @@ void update_display(LaCrosse::Frame *frame)
 {
     char tmp[32];
     // last_display = millis();
-    uint32_t now = uptime_sec();
+    unsigned int now = (unsigned int)uptime_sec();
     if (display_on)
         display.displayOn();
     else if (now < auto_display_on + DISPLAY_TIMEOUT) {
@@ -245,7 +245,7 @@ void update_display(LaCrosse::Frame *frame)
         display.displayOff();
         return;
     }
-    snprintf(tmp, 31, "%dd %d:%02d:%02d", now / 86400, (now % 86400) / 3600, (now % 3600) / 60, now % 60);
+    snprintf(tmp, 31, "%ud %u:%02u:%02u", now / 86400, (now % 86400) / 3600, (now % 3600) / 60, now % 60);
     String status = "WiFi:" + wifi_disp + " up: " + String(tmp);
     bool s_invert = (now / 60) & 0x01; /* 60 seconds inverted, the next 60s not */
     display.setColor(WHITE);
@@ -278,7 +278,7 @@ void update_display(LaCrosse::Frame *frame)
         case BLACK:
             display.setColor(WHITE);
             break;
-        case WHITE:
+        default:
             display.setColor(BLACK);
             break;
     }
