@@ -50,16 +50,22 @@ byte *SX127x::GetPayloadPointer()
 
 void SX127x::NextDataRate(byte idx)
 {
-    int rate;
     if (idx != 0xff)
-        m_datarate = idx;
+        m_datarate_req = idx;
     else
-        m_datarate++;
-    m_datarate %= (sizeof(_rates)/sizeof(int));
-    rate = _rates[m_datarate];
+        m_datarate_req++;
+    m_datarate_req %= (sizeof(_rates)/sizeof(int));
+}
+
+void SX127x::SetDataRate()
+{
+    if (m_datarate_req == m_datarate)
+        return;
+    int rate = _rates[m_datarate_req];
     word r = ((32000000UL + (rate / 2)) / rate);
     WriteReg(REG_BITRATEMSB, r >> 8);
     WriteReg(REG_BITRATELSB, r & 0xFF);
+    m_datarate = m_datarate_req;
 }
 
 void SX127x::SetFrequency(unsigned long kHz)
@@ -77,6 +83,7 @@ void SX127x::EnableReceiver(bool enable, int len)
         WriteReg(REG_OPMODE, (ReadReg(REG_OPMODE) & RF_OPMODE_MASK) | RF_OPMODE_STANDBY);
         return;
     }
+    SetDataRate();
     /* enable... */
     WriteReg(REG_OPMODE, (ReadReg(REG_OPMODE) & RF_OPMODE_MASK) | RF_OPMODE_RECEIVER);
     WriteReg(REG_FIFOTHRESH, RF_FIFOTHRESH_TXSTARTCONDITION_FIFONOTEMPTY | (len - 1));
@@ -170,7 +177,8 @@ SX127x::SX127x(byte ss, byte reset)
 {
     m_reset = reset;
     m_ss = ss;
-    m_datarate = 0;
+    m_datarate = -1;
+    m_datarate_req = 0;
     m_frequency = 868300;
     m_payloadready = false;
 }

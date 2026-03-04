@@ -28,6 +28,7 @@ public:
 private:
   byte m_ss, m_reset;
   int m_datarate;
+  int m_datarate_req;
   unsigned long m_frequency;
   bool m_payloadready;
   byte m_payload[PAYLOADSIZE];
@@ -35,6 +36,7 @@ private:
 
   byte ReadReg(byte addr);
   void WriteReg(byte addr, byte value);
+  void SetDataRate();
   byte GetByteFromFifo();
   void ClearFifo();
 
