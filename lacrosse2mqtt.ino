@@ -16,6 +16,7 @@
  * with this program; if not, got to https://www.gnu.org/licenses/
  */
 
+#include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <SPI.h>
 #include <PubSubClient.h>
@@ -148,19 +149,23 @@ void check_repeatedjobs()
 
 void pub_hass_config(int what, byte ID)
 {
-    static const String name[2] = { "Luftfeuchtigkeit", "Temperatur" };
-    static const String value[2] = { "humi", "temp" };
-    static const String dclass[2] = { "humidity", "temperature" };
-    static const String unit[2] = { "%", "°C" };
-    static const String mdi[2] = { "water-percent", "thermometer" };
+    static const char* const name[2] = { "Luftfeuchtigkeit", "Temperatur" };
+    static const char* const value[2] = { "humi", "temp" };
+    static const char* const dclass[2] = { "humidity", "temperature" };
+    static const char* const unit[2] = { "%", "°C" };
+    static const char* const mdi[2] = { "mdi:water-percent", "mdi:thermometer" };
     String where = id2name[ID];
 
     if (!config.ha_discovery)
         return;
+
     /* only send once */
     if (hass_cfg[ID] & (1 << what))
         return;
     hass_cfg[ID] |= (1 << what);
+
+    JsonDocument cfg;
+    String msg;
 
     String where_lower = where;
     where_lower.toLowerCase();
@@ -187,25 +192,21 @@ void pub_hass_config(int what, byte ID)
      */
     String uid = mqtt_id + "_" + where_lower + "_" + value[what];
     String topic = hass_base + uid + "/config";
-    String msg = "{"
-            "\"device\":{"
-                "\"identifiers\":[\"" + mqtt_id + "_" + where_lower + "\"],"
-                "\"name\":\"" + where + "\"," // this is what defines the "group" of measurements
-                "\"manufacturer\":\"Lacrosse2MQTT\","
-                "\"model\":\"esp32\""
-            "},"
-            "\"origin\":{"
-                "\"name\":\"lacrosse2mqtt\","
-                "\"url\":\"https://github.com/seife/lacrosse2mqtt\""
-            "},"
-            "\"state_class\":\"measurement\","
-            "\"device_class\":\"" + dclass[what]+ "\","
-            "\"unit_of_measurement\":\"" + unit[what] + "\","
-            "\"unique_id\":\"" + uid + "\","
-            "\"state_topic\":\"" + pretty_base + where+"/"+value[what]+"\","
-            "\"name\":\"" + name[what] + "\"," // this is the name of the actual measurement
-            "\"icon\":\"mdi:" + mdi[what] + "\""
-        "}";
+    cfg["device"]["identifiers"][0] = mqtt_id + "_" +where_lower;
+    cfg["device"]["name"] = where;
+    cfg["device"]["manufacturer"] = "Lacrosse2MQTT";
+    cfg["device"]["model"] = "esp32";
+    cfg["origin"]["name"] = "lacrosse2mqtt";
+    cfg["origin"]["url"] = "https://github.com/seife/lacrosse2mqtt";
+    cfg["state_class"] = "measurement";
+    cfg["device_class"] = dclass[what];
+    cfg["unit_of_measurement"] = unit[what];
+    cfg["unique_id"] = uid;
+    cfg["state_topic"] = pretty_base + where + "/" + value[what];
+    cfg["name"] = name[what];
+    cfg["icon"] = mdi[what];
+    serializeJson(cfg, msg);
+
     Serial.println(topic);
     Serial.println(topic.length());
     Serial.println(msg);
@@ -326,12 +327,13 @@ void receive()
         mqtt_client.publish((pub + "temp").c_str(), String(frame.temp, 1).c_str());
         if (frame.humi <= 100)
             mqtt_client.publish((pub + "humi").c_str(), String(frame.humi, DEC).c_str());
-        String state = "";
-        state += "{\"low_batt\": " + String(frame.batlo?"true":"false") +
-                 ", \"init\": " + String(frame.init?"true":"false") +
-                 ", \"RSSI\": " + String(rssi, DEC) +
-                 ", \"baud\": " + String(rate / 1000.0, 3) +
-                 "}";
+        JsonDocument json;
+        String state;
+        json["low_batt"] = frame.batlo?"true":"false";
+        json["init"] = frame.init?"true":"false";
+        json["RSSI"] = rssi;
+        json["baud"] = rate / 1000.0;
+        serializeJson(json, state);
         mqtt_client.publish((pub + "state").c_str(), state.c_str());
         if (id2name[ID].length() > 0) {
             pub = pretty_base + id2name[ID] + "/";
