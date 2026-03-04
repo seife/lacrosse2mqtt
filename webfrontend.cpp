@@ -93,7 +93,7 @@ bool load_config()
     if (!littlefs_ok)
         return false;
     File cfg = LittleFS.open("/config.json");
-    StaticJsonDocument<512> doc;
+    JsonDocument doc;
     DeserializationError error = deserializeJson(doc, cfg);
     if (error) {
         Serial.println("Failed to read /config.json");
@@ -114,9 +114,9 @@ bool load_config()
             const char *tmp = doc["mqtt_pass"];
             config.mqtt_pass = String(tmp);
         }
-        if (doc.containsKey("display_on"))
+        if (doc["display_on"].is<bool>())
             config.display_on = doc["display_on"];
-        if (doc.containsKey("ha_discovery"))
+        if (doc["ha_discovery"].is<bool>())
             config.ha_discovery = doc["ha_discovery"];
         Serial.println("result of config.json: "
                        "mqtt_server '" + config.mqtt_server + "' "
@@ -144,7 +144,7 @@ bool save_config()
         Serial.println("Failed to open /config.json for writing");
         return false;
     }
-    StaticJsonDocument<256> doc;
+    JsonDocument doc;
     doc["mqtt_port"] = config.mqtt_port;
     doc["mqtt_server"] = config.mqtt_server;
     doc["mqtt_user"] = config.mqtt_user;
