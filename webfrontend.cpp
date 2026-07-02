@@ -231,7 +231,43 @@ void add_current_table(String &s, bool rawdata)
     s += "<table><tr><th>ID</th><th>Temperature</th><th>Humidity</th><th>RSSI</th><th>Name</th><th>Age (ms)</th><th>Battery</th><th>New?</th>";
     if (rawdata)
         s += "<th>Raw Frame Data</th>";
-    s += "</tr>\n";
+    s += "</tr>\n<tbody id=\"rows\"></tbody></table>\n";
+    s += "<script>\n"
+        "async function updateTable(){\n"
+        "  try{\n"
+        "    const res = await fetch('/api/data.json');\n"
+        "    if(!res.ok) throw new Error(res.status);\n"
+        "    const obj = await res.json(); // expect array of objects\n"
+        "\n"
+        "    // get numeric sorted keys\n"
+        "    const keys = Object.keys(obj).map(k=>parseInt(k,10)).filter(n=>!isNaN(n)).sort((a,b)=>a-b);\n"
+        "    // build HTML for tbody\n"
+        "    const html = keys.map(id => {\n"
+        "      const d = obj[id] || {}; \n"
+        "      return `<tr data-id=\"${id}\">` +\n"
+        "        `<td>${id}</td>` +\n"
+        "        '<td>' + (d.temp ?? '-') + '</td>' +\n"
+        "        '<td>' + (d.humi ?? '-') + '</td>' +\n"
+        "        '<td>' + (d.rssi ?? '-') + '</td>' +\n"
+        "        '<td>' + (d.name ?? '') + '</td>' +\n"
+        "        '<td>' + (d.age ?? '') + '</td>' +\n"
+        "        '<td>' + (('batlo' in d) ? (d.batlo ? 'LOW!' : 'OK') : '-') + '</td>' +\n"
+        "        '<td>' + (('init' in d)? (d.init ? 'yes' : 'no') : '-') + '</td>' +\n";
+    if (rawdata)
+        s+= "        '<td>' + (d.rawdata ?? '-') + '</td>' +\n";
+    s += "      '</tr>';\n"
+        "    }).join('');\n"
+        "\n"
+        "    document.getElementById('rows').innerHTML = html;\n"
+        "  }catch(e){\n"
+        "    console.error(e);\n"
+        "  }\n"
+        "}\n"
+        "\n"
+        "updateTable();\n"
+        "setInterval(updateTable, 5000);\n"
+        "</script>\n";
+#if 0
     for (int i = 0; i < SENSOR_NUM; i++) {
         LaCrosse::Frame f;
         bool stale = false;
@@ -282,6 +318,7 @@ void add_current_table(String &s, bool rawdata)
         s += "</tr>\n";
     }
     s += "</table>\n";
+#endif
 }
 
 void add_header(String &s, String title)
@@ -345,6 +382,46 @@ void add_sysinfo_footer(String &s)
         ", Built: " + __DATE__ + " " + __TIME__ +
         ", Reset reason: " + ESP32GetResetReason(0) +
         "</p>\n";
+}
+void handle_api() {
+    Serial.println("handle_api!");
+    JsonDocument doc;
+    unsigned long now = millis();
+    String ret;
+    for (int i = 0; i < SENSOR_NUM; i++) {
+        LaCrosse::Frame f;
+        bool stale = false;
+        String name = id2name[i];
+        String idx = String(i);
+        if (fcache[i].timestamp == 0) {
+            if (name.length() > 0)  // entry is stale, but configured
+                doc[idx]["name"] = name;
+            continue;
+        }
+        if (i & 0x80)
+            f.rate = 9579;
+        else
+            f.rate = 17241;
+        if (! LaCrosse::TryHandleData(fcache[i].data, &f))
+            continue;
+        if (f.humi <= 100)
+            doc[idx]["humi"] = String(f.humi) + "%";
+        doc[idx]["temp"] = String(f.temp, 1);
+        doc[idx]["rssi"] = String(fcache[i].rssi);
+        doc[idx]["name"] = name;
+        doc[idx]["age"] = now - fcache[i].timestamp;
+        doc[idx]["batlo"] = f.batlo;
+        doc[idx]["init"] = f.init;
+        String raw = "";
+        for (int j = 0; j < FRAME_LENGTH; j++) {
+            char tmp[3];
+            snprintf(tmp, 3, "%02X", fcache[i].data[j]);
+            raw += String(tmp);
+        }
+        doc[idx]["rawdata"] = raw;
+    }
+    serializeJson(doc, ret);
+    server.send(200, "application/json", ret);
 }
 
 //void handle_index() {
@@ -529,6 +606,7 @@ void setup_web()
     server.on("/", handle_index);
     server.on("/index.html", handle_index);
     server.on("/config.html", handle_config);
+    server.on("/api/data.json", handle_api);
     server.onNotFound([](){
         server.send(404, "text/plain", "The content you are looking for was not found.\n");
         Serial.println("404: " + server.uri());
