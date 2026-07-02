@@ -149,9 +149,10 @@ void check_repeatedjobs()
 
 void pub_hass_config(int what, byte ID)
 {
-    static const char* const name[2] = { "Luftfeuchtigkeit", "Temperatur" };
-    static const char* const value[2] = { "humi", "temp" };
-    static const char* const dclass[2] = { "humidity", "temperature" };
+#define is_battery (what == 2)
+    static const char* const name[3] = { "Luftfeuchtigkeit", "Temperatur", "Batterie_schwach" };
+    static const char* const value[3] = { "humi", "temp", "batt_low" };
+    static const char* const dclass[3] = { "humidity", "temperature", "battery" };
     static const char* const unit[2] = { "%", "°C" };
     static const char* const mdi[2] = { "mdi:water-percent", "mdi:thermometer" };
     String where = id2name[ID];
@@ -191,20 +192,32 @@ void pub_hass_config(int what, byte ID)
        }
      */
     String uid = mqtt_id + "_" + where_lower + "_" + value[what];
-    String topic = hass_base + uid + "/config";
+    String topic;
+    if (is_battery)
+        topic = String("homeassistant/binary_sensor/");
+    else
+        topic = hass_base;
+    topic += uid +  "/config";
     cfg["device"]["identifiers"][0] = mqtt_id + "_" +where_lower;
     cfg["device"]["name"] = where;
     cfg["device"]["manufacturer"] = "Lacrosse2MQTT";
     cfg["device"]["model"] = "esp32";
     cfg["origin"]["name"] = "lacrosse2mqtt";
     cfg["origin"]["url"] = "https://github.com/seife/lacrosse2mqtt";
-    cfg["state_class"] = "measurement";
+    if (! is_battery) {
+        cfg["state_class"] = "measurement";
+        cfg["unit_of_measurement"] = unit[what];
+        cfg["state_topic"] = pretty_base + where + "/" + value[what];
+        cfg["icon"] = mdi[what];
+    } else {
+        cfg["state_topic"] = pub_base + String(ID, DEC) + "/state";
+        cfg["value_template"] = "{{ value_json.low_batt }}";
+        cfg["payload_on"] = "true";   /* boolean does not seem to work, so we send a string */
+        cfg["payload_off"] = "false";
+    }
     cfg["device_class"] = dclass[what];
-    cfg["unit_of_measurement"] = unit[what];
     cfg["unique_id"] = uid;
-    cfg["state_topic"] = pretty_base + where + "/" + value[what];
     cfg["name"] = name[what];
-    cfg["icon"] = mdi[what];
     serializeJson(cfg, msg);
 
     Serial.println(topic);
@@ -341,6 +354,7 @@ void receive()
                 Serial.println(String("skipping invalid temp diff bigger than 2K: ") + String(oldframe.temp - frame.temp,1));
             else {
                 pub_hass_config(1, ID);
+                pub_hass_config(2, ID);
                 mqtt_client.publish((pub + "temp").c_str(), String(frame.temp, 1).c_str());
             }
             if (frame.humi <= 100) {
