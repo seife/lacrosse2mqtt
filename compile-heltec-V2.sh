@@ -1,1 +1,1 @@
-compile-heltec.sh
+compile.sh
