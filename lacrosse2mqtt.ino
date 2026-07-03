@@ -34,7 +34,7 @@
 #include <ESPWebDAV.h>
 #endif
 
-#define FORMAT_LITTLEFS_IF_FAILED false
+#define FORMAT_LITTLEFS_IF_FAILED true
 
 /* if display is default to off, keep it on for this many seconds after power on
  * or a wifi change event */
