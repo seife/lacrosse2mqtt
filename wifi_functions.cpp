@@ -84,16 +84,19 @@ void WiFiEvent(WiFiEvent_t event)
 
 void start_WPS()
 {
+    esp_err_t err;
     Serial.println("Starting WPS");
     wifi_state = STATE_WPS;
     WiFi.mode(WIFI_MODE_STA);
-    wps_config.wps_type = WPS_TYPE_PBC;
-    strcpy(wps_config.factory_info.manufacturer, ESP_MANUFACTURER);
-    strcpy(wps_config.factory_info.model_number, ESP_MODEL_NUMBER);
-    strcpy(wps_config.factory_info.model_name, ESP_MODEL_NAME);
-    strcpy(wps_config.factory_info.device_name, ESP_DEVICE_NAME);
-    esp_wifi_wps_enable(&wps_config);
-    esp_wifi_wps_start(0);
+    wps_config = WPS_CONFIG_INIT_DEFAULT(WPS_TYPE_PBC);
+    err = esp_wifi_wps_enable(&wps_config);
+    if (err != ESP_OK) {
+        Serial.printf("WPS Enable Failed: 0x%x: %s\n", err, esp_err_to_name(err));
+    }
+    err = esp_wifi_wps_start(0);
+    if (err != ESP_OK) {
+        Serial.printf("WPS Start Failed: 0x%x: %s\n", err, esp_err_to_name(err));
+    }
 #if 0
     while (wifi_state == STATE_WPS) {
         delay(500);
