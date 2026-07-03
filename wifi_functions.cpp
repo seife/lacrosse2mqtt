@@ -27,6 +27,13 @@ void WiFiEvent(WiFiEvent_t event)
             Serial.println("Station Mode Started");
             wifi_state = STATE_DISC;
             break;
+        case ARDUINO_EVENT_WIFI_STA_STOP:
+            Serial.println("Station Mode Stopped");
+            wifi_state = STATE_DISC;
+            break;
+        case ARDUINO_EVENT_WIFI_READY:
+            Serial.println("WiFi is ready.");
+            break;
         case ARDUINO_EVENT_WIFI_STA_GOT_IP:
             Serial.printf("Connected to: %s (%s), Got IP: ",WiFi.SSID().c_str(),WiFi.BSSIDstr().c_str());
             Serial.println(WiFi.localIP());
@@ -36,6 +43,9 @@ void WiFiEvent(WiFiEvent_t event)
             Serial.println("Disconnected from station, attempting reconnection");
             wifi_state = STATE_DISC;
             WiFi.reconnect();
+            break;
+        case ARDUINO_EVENT_WIFI_STA_CONNECTED:
+            Serial.println("WIFI_STA_CONNECTED, waiting for GOT_IP");
             break;
         case ARDUINO_EVENT_WPS_ER_SUCCESS:
             Serial.printf("WPS Successful, stopping WPS and connecting to: %s\r\n", WiFi.SSID().c_str());
@@ -103,7 +113,7 @@ void WiFiStatusCheck()
     wl_status_t now = WiFi.status();
     if (now == last)
         return;
-    Serial.printf("WiFI status changed from: %d to: %d\r\n", last, now);
+    Serial.printf("WiFi status changed from: %d to: %d\r\n", last, now);
     if (now == WL_CONNECTED)
         wifi_state = STATE_CONN;
     else
