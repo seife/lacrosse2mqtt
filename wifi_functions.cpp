@@ -40,6 +40,11 @@ void WiFiEvent(WiFiEvent_t event)
             wifi_state = STATE_CONN;
             break;
         case ARDUINO_EVENT_WIFI_STA_DISCONNECTED:
+            if (wifi_state == STATE_WPS) {
+                Serial.println("WIFI_STA_DISCONNECTED while STATE_WPS");
+                /* do not reconnect(), but just keep going */
+                break;
+            }
             Serial.println("Disconnected from station, attempting reconnection");
             wifi_state = STATE_DISC;
             WiFi.reconnect();
