@@ -1,7 +1,19 @@
 #!/bin/bash
 
 IAM=${0##*/}
-IAM=${IAM%-heltec.sh}
+case $IAM in
+    *-heltec-V2.sh)
+        IAM=${IAM%-heltec-V2.sh}
+        BOARD_NAME=heltec_wifi_lora_32_V2
+        ;;
+    *-heltec-V3.sh)
+        IAM=${IAM%-heltec-V3.sh}
+        BOARD_NAME=heltec_wifi_lora_32_V3
+        ;;
+    *)  echo "invalid script name $IAM"
+        exit 1 ;;
+esac
+
 
 MYVERSION=$(git describe --always --dirty)
 PARAM=()
@@ -11,7 +23,7 @@ if [ "$IAM" = upload ]; then
 		exit 1
 	fi
 	if ! [[ "$1" =~ "/dev/"* ]]; then
-		curl -v -F "image=@build/esp32.esp32.heltec_wifi_lora_32_V2/lacrosse2mqtt.ino.bin" \
+		curl -v -F "image=@build/esp32.esp32.$BOARD_NAME/lacrosse2mqtt.ino.bin" \
 			-H "Origin: http://$1" \
 			"$1"/update
 		echo
@@ -25,4 +37,4 @@ else
 	PARAM+=(--warnings all)
 fi
 
-arduino-cli "$IAM" -b esp32:esp32:heltec_wifi_lora_32_V2 "${PARAM[@]}" $@
+arduino-cli "$IAM" -b esp32:esp32:$BOARD_NAME "${PARAM[@]}" $@

@@ -1,7 +1,22 @@
 #ifndef _GLOBALS_H
 #define _GLOBALS_H
 
-#if defined(WIFI_LoRa_32_V2)
+#if defined(WIFI_LoRa_32_V3)
+/* Heltec WiFi LoRa 32 V3 (SX1262) */
+#define OLED_SDA  SDA_OLED
+#define OLED_SCL  SCL_OLED
+#define OLED_RST  RST_OLED
+#define LORA_CS   SS
+#define LORA_RST  RST_LoRa
+/* apparently the Heltec core defines this as DIO1, but plain esp core has DIO0 */
+#define LORA_IRQ  DIO0
+#ifndef BUSY_LoRa
+#define BUSY_LoRa 13
+#endif
+#define LORA_BUSY BUSY_LoRa
+/* not defined by board? */
+static const uint8_t KEY_BUILTIN = 0;
+#elif defined(WIFI_LoRa_32_V2)
 /* heltec_lora_32_v2 board (SX1276) */
 #define OLED_SDA  SDA_OLED
 #define OLED_SCL  SCL_OLED
@@ -11,9 +26,7 @@
 #define LORA_IRQ  DIO0
 #else
 /* TTGO LoRa32 V1 (SX1276) — default when no board macro is set.
- * if built with board "ttgo-lora32-v1", OLED_xxx and LORA_XXX are defined,
- * but this board does not define filesystem layouts.
- * so let's use plain "esp32 dev module" and define these here...
+ * The "ttgo-lora32-v1" board provides OLED_SDA/... but "esp32 dev module" does not.
  */
 #ifndef OLED_SDA
 // I2C OLED Display works with SSD1306 driver

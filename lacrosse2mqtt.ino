@@ -83,8 +83,13 @@ SSD1306Wire display(0x3c, OLED_SDA, OLED_SCL);
   #define DI0 26 // interrupt mode did not work well
   ==> already defined in board header, also MOSI, MISO,...!
  */
+#if defined(WIFI_LoRa_32_V3)
+SX1262 radio = new Module(LORA_CS, LORA_IRQ, LORA_RST, LORA_BUSY);
+#define RADIO_NAME "[SX1262]"
+#else
 SX1276 radio = new Module(LORA_CS, LORA_IRQ, LORA_RST, RADIOLIB_NC);
 #define RADIO_NAME "[SX1276]"
+#endif
 
 // flag set by the radio ISR when a full packet has been received
 volatile bool receivedFlag = false;
@@ -422,7 +427,12 @@ void setup(void)
         Serial.println("LittleFS Mount Failed");
     setup_web(); /* also loads config from LittleFS */
     display_on = config.display_on;
-
+#if defined(WIFI_LoRa_32_V3)
+    /* Heltec V3 board needs VEXT turned on to enable the oled */
+    pinMode(Vext, OUTPUT);
+    digitalWrite(Vext, LOW);
+    delay(20);
+#endif
     pinMode(KEY_BUILTIN, INPUT);
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(OLED_RST, OUTPUT);
