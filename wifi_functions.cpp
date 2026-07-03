@@ -63,15 +63,18 @@ void WiFiEvent(WiFiEvent_t event)
         case ARDUINO_EVENT_WPS_ER_FAILED:
             Serial.println("WPS Failed, retrying normal connect");
             esp_wifi_wps_disable();
-            wifi_state = STATE_DISC;
-            delay(10);
-            WiFi.begin();
+            // wifi_state = STATE_DISC;
+            // delay(10);
+            // WiFi.begin();
+            /* not sure why? but has been in use like this and seems to work */
+            start_WPS();
             break;
         case ARDUINO_EVENT_WPS_ER_TIMEOUT:
             Serial.println("WPS Timedout, trying normal connect...");
             wifi_state = STATE_DISC;
             esp_wifi_wps_disable();
             wifi_state = STATE_DISC;
+            WiFi.disconnect();
             delay(10);
             WiFi.begin();
             break;
