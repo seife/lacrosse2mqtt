@@ -19,6 +19,7 @@
 #include <ArduinoJson.h>
 #include <LittleFS.h>
 #include <SPI.h>
+#include <RadioLib.h>
 #include <PubSubClient.h>
 #include <SSD1306Wire.h>
 #include "wifi_functions.h"
@@ -26,7 +27,6 @@
 #include "globals.h"
 
 #include "lacrosse.h"
-#include "SX127x.h"
 
 //#define DEBUG_DAVFS
 
@@ -83,7 +83,32 @@ SSD1306Wire display(0x3c, OLED_SDA, OLED_SCL);
   #define DI0 26 // interrupt mode did not work well
   ==> already defined in board header, also MOSI, MISO,...!
  */
-SX127x SX(LORA_CS, LORA_RST);
+SX1276 radio = new Module(LORA_CS, LORA_IRQ, LORA_RST, RADIOLIB_NC);
+#define RADIO_NAME "[SX1276]"
+
+// flag set by the radio ISR when a full packet has been received
+volatile bool receivedFlag = false;
+#if defined(ESP8266) || defined(ESP32)
+  IRAM_ATTR
+#endif
+void onPacketReceived(void) {
+    receivedFlag = true;
+}
+
+// Data rate cycling - matches original _rates[] in the old SX127x.cpp
+static const float datarates_kbps[] = { 9.579f, 17.241f };
+static const int   datarates_bps[]  = { 9579,   17241   };
+static int currentRate = 0;
+
+void switchDataRate(int idx = -1) {
+    if (idx >= 0)
+        currentRate = idx % 2;
+    else
+        currentRate = (currentRate + 1) % 2;
+    radio.standby();
+    radio.setBitRate(datarates_kbps[currentRate]);
+    radio.startReceive();
+}
 
 #define ESP_MANUFACTURER  "ESPRESSIF"
 #define ESP_MODEL_NUMBER  "ESP32"
@@ -103,7 +128,7 @@ void check_repeatedjobs()
     /* Toggle the data rate fast/slow */
     unsigned long now = millis();
     if (now - last_switch > interval * 1000) {
-        SX.NextDataRate();
+        switchDataRate();
         last_switch = now;
     }
     if (config.changed) {
@@ -304,20 +329,26 @@ void update_display(LaCrosse::Frame *frame)
 
 void receive()
 {
-    byte *payload;
-    byte payLoadSize;
-    int rssi, rate;
-    if (!SX.Receive(payLoadSize))
+    if (!receivedFlag)
         return;
+    receivedFlag = false;
+
+    uint8_t payload[FRAME_LENGTH];
+    int16_t st = radio.readData(payload, FRAME_LENGTH);
+    if (st != RADIOLIB_ERR_NONE) {
+        Serial.print(F(RADIO_NAME " readData failed: "));
+        Serial.println(st);
+        radio.startReceive();
+        return;
+    }
 
     digitalWrite(LED_BUILTIN, HIGH);
-    rssi = SX.GetRSSI();
-    rate = SX.GetDataRate();
-    payload = SX.GetPayloadPointer();
+    int rssi = (int)radio.getRSSI();
+    int rate = datarates_bps[currentRate];
 
     if (DEBUG) {
         Serial.print("\nEnd receiving, HEX raw data: ");
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < FRAME_LENGTH; i++) {
             Serial.print(payload[i], HEX);
             Serial.print(" ");
         }
@@ -369,13 +400,13 @@ void receive()
 
     } else {
         static unsigned long last;
-        LaCrosse::DisplayRaw(last, "Unknown", payload, payLoadSize, rssi, rate);
+        LaCrosse::DisplayRaw(last, "Unknown", payload, FRAME_LENGTH, rssi, rate);
         Serial.println();
     }
 
     update_display(&frame);
-    SX.EnableReceiver(true);
     digitalWrite(LED_BUILTIN, LOW);
+    radio.startReceive();
 }
 
 void setup(void)
@@ -421,17 +452,24 @@ void setup(void)
 
     last_switch = millis();
 
-    if (!SX.init()) {
-        Serial.println("***** SX127x init failed! ****");
-        display.drawString(0,24, "***** SX127x init failed! ****");
+    Serial.print(F(RADIO_NAME " Initializing... "));
+    int state = radio.beginFSK(freq / 1000.0, datarates_kbps[0], 30.0, 125.0);
+    if (state != RADIOLIB_ERR_NONE) {
+        Serial.printf("***** %s init failed! code %d ****\n", RADIO_NAME, state);
+        display.drawString(0, 24, RADIO_NAME " init failed!");
         display.display();
-        while(true)
-            delay(1000);
+        while(true) delay(1000);
     }
-    SX.SetupForLaCrosse();
-    SX.SetFrequency(freq);
-    SX.NextDataRate(0);
-    SX.EnableReceiver(true);
+    Serial.println("OK");
+
+    // LaCrosse-specific configuration
+    radio.setCRC(0);                                    // LaCrosse has its own CRC-8
+    uint8_t syncWord[] = {0x2D, 0xD4};
+    radio.setSyncWord(syncWord, 2);
+    radio.fixedPacketLengthMode(FRAME_LENGTH);          // 5-byte fixed packets
+    radio.setPacketReceivedAction(onPacketReceived);
+
+    switchDataRate(0);                                  // sets initial rate + starts receive
 
 #ifdef DEBUG_DAVFS
     tcp.begin();

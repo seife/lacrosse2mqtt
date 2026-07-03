@@ -1,11 +1,19 @@
 #ifndef _GLOBALS_H
 #define _GLOBALS_H
 
-/* if not heltec_lora_32_v2 board... */
-#ifndef WIFI_LoRa_32_V2
-/* if built with board "ttgo-lora32-v1" these are defined.
+#if defined(WIFI_LoRa_32_V2)
+/* heltec_lora_32_v2 board (SX1276) */
+#define OLED_SDA  SDA_OLED
+#define OLED_SCL  SCL_OLED
+#define OLED_RST  RST_OLED
+#define LORA_CS   SS
+#define LORA_RST  RST_LoRa
+#define LORA_IRQ  DIO0
+#else
+/* TTGO LoRa32 V1 (SX1276) — default when no board macro is set.
+ * if built with board "ttgo-lora32-v1", OLED_xxx and LORA_XXX are defined,
  * but this board does not define filesystem layouts.
- * plain "esp32 dev module" does not define these...
+ * so let's use plain "esp32 dev module" and define these here...
  */
 #ifndef OLED_SDA
 // I2C OLED Display works with SSD1306 driver
@@ -13,13 +21,10 @@
 #define OLED_SCL 15
 #define OLED_RST 16
 
-// SPI LoRa Radio
-#define LORA_SCK  5   // GPIO5 - SX1276 SCK
-#define LORA_MISO 19  // GPIO19 - SX1276 MISO
-#define LORA_MOSI 27  // GPIO27 - SX1276 MOSI
+// SPI LoRa Radio (RadioLib uses the default SPI object; only these pins are needed)
 #define LORA_CS   18  // GPIO18 - SX1276 CS
 #define LORA_RST  14  // GPIO14 - SX1276 RST
-#define LORA_IRQ  26  // GPIO26 - SX1276 IRQ (interrupt request)
+#define LORA_IRQ  26  // GPIO26 - SX1276 DIO0
 static const uint8_t KEY_BUILTIN = 0;
 #endif
 #ifndef LED_BUILTIN
@@ -27,17 +32,6 @@ static const uint8_t LED_BUILTIN = 2;
 #define BUILTIN_LED  LED_BUILTIN // backward compatibility
 #define LED_BUILTIN LED_BUILTIN
 #endif
-#else
-/* heltec_lora_32_v2 board */
-#define OLED_SDA  SDA_OLED
-#define OLED_SCL  SCL_OLED
-#define OLED_RST  RST_OLED
-#define LORA_CS   SS
-#define LORA_RST  RST_LoRa
-#define LORA_IRQ  DIO0
-#define LORA_MISO MISO
-#define LORA_MOSI MOSI
-#define LORA_SCK  SCK
 #endif
 /* how many bytes is our data frame long? */
 #define FRAME_LENGTH 5
