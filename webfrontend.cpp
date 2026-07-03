@@ -226,7 +226,6 @@ bool save_idmap()
 
 void add_current_table(String &s, bool rawdata)
 {
-    unsigned long now = millis();
     String h;
     s += "<table><tr><th>ID</th><th>Temperature</th><th>Humidity</th><th>RSSI</th><th>Name</th><th>Age (ms)</th><th>Battery</th><th>New?</th>";
     if (rawdata)
@@ -268,6 +267,7 @@ void add_current_table(String &s, bool rawdata)
         "setInterval(updateTable, 5000);\n"
         "</script>\n";
 #if 0
+    unsigned long now = millis();
     for (int i = 0; i < SENSOR_NUM; i++) {
         LaCrosse::Frame f;
         bool stale = false;
@@ -375,7 +375,6 @@ void handle_api() {
     String ret;
     for (int i = 0; i < SENSOR_NUM; i++) {
         LaCrosse::Frame f;
-        bool stale = false;
         String name = id2name[i];
         String idx = String(i);
         if (fcache[i].timestamp == 0) {
